@@ -31,7 +31,7 @@ Without them the workflow still runs; the builds are then unsigned and nothing g
 macOS refuses to open an unsigned, unnotarized app without a detour through the system settings, and Windows shows a warning for unsigned installers. For a tool meant to be easy, both are needed:
 
 - **macOS:** an Apple Developer Program membership (99 USD a year) gives the Developer ID certificate and the API key for notarization.
-- **Windows:** open-source projects can get free signing from the [SignPath Foundation](https://signpath.org). SignPath signs in its own pipeline step instead of through `CSC_LINK`; when the project is accepted, add their GitHub Action after the packaging step. A purchased certificate no longer comes as a file: since June 2023 the private key has to stay in hardware or a cloud service, so it would need that provider's own signing step too. A signature alone does not end the SmartScreen warning, that takes reputation.
+- **Windows:** the [SignPath Foundation](https://signpath.org) signs open-source projects for free, but only once they are widely known (stars, contributors, articles). It turned this project down in November 2026; a new application is welcome later, and a paid SignPath subscription works right away. SignPath signs in its own pipeline step instead of through `CSC_LINK`, so it would need their GitHub Action after the packaging step. A purchased certificate no longer comes as a file: since June 2023 the private key has to stay in hardware or a cloud service, so it would need that provider's own signing step too. A signature alone does not end the SmartScreen warning, that takes reputation.
 
 ## Microsoft Store
 
