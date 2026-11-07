@@ -1,8 +1,8 @@
 import { githubUrl, SITE } from './config.ts';
 import { CONTENT, LANGS, NAMES, TAG, type Content, type Lang } from './content.ts';
-import { escape, fill, formatDate, formatSize, groupedChecksum, inline, NOT_FOUND, relative } from './html.ts';
+import { escape, fill, formatDate, formatSize, groupedChecksum, inline, relative } from './html.ts';
 import { LEGAL, type LegalKind } from './legal.ts';
-import { langsOf, liabilityPath, PATHS, type PageKind } from './paths.ts';
+import { langsOf, liabilityPath, notFoundPath, PATHS, type PageKind } from './paths.ts';
 import { SLOTS, type Download, type Platform, type Release, type Slot } from './release.ts';
 
 /** Pixel size of each screenshot, by "lang/name"; the build reads it from the files. */
@@ -373,20 +373,15 @@ export function legalPage(lang: Lang, kind: LegalKind, context: RenderContext): 
   return frame(c, kind, path, `${doc.title}: IMAP Transfer`, doc.description, main, context);
 }
 
-/** One page for every language: the server answers every unknown path with it. */
-export function notFoundPage(context: RenderContext): string {
-  const path = NOT_FOUND;
-  const lines = LANGS.map((lang, index) => {
-    const t = CONTENT[lang].notFound;
-    const tag = index === 0 ? '' : ` lang="${TAG[lang]}"`;
-    const heading = index === 0 ? `<h1 id="titel">${escape(t.title)}</h1>` : `<h2${tag}>${escape(t.title)}</h2>`;
-    return `${heading}
-  <p${tag}><a href="${relative(path, PATHS.home[lang])}">${escape(t.link)}</a></p>`;
-  });
+/** The page the server answers unknown addresses under a language with, in that language. */
+export function notFoundPage(lang: Lang, context: RenderContext): string {
+  const c = CONTENT[lang];
+  const path = notFoundPath(lang);
   const main = `<article class="rechtliches nicht-gefunden" aria-labelledby="titel">
-  ${lines.join('\n  ')}
+  <h1 id="titel">${escape(c.notFound.title)}</h1>
+  <p><a href="${relative(path, PATHS.home[lang])}">${escape(c.notFound.link)}</a></p>
 </article>`;
-  return frame(CONTENT.en, 'notFound', path, `Page not found: IMAP Transfer`, CONTENT.en.notFound.title, main, context);
+  return frame(c, 'notFound', path, `${c.notFound.title}: IMAP Transfer`, c.notFound.title, main, context);
 }
 
 export function sitemap(): string {

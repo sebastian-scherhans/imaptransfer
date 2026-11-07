@@ -6,7 +6,7 @@ import { describe, it } from 'node:test';
 import { formatSize, inline, relative } from '../src/html.ts';
 import { CONTENT, LANGS, TAG, type Content, type Lang } from '../src/content.ts';
 import { homePage, legalPage, notFoundPage, sitemap, type ImageSizes, type RenderContext } from '../src/pages.ts';
-import { IMPRINT_LANGS, liabilityPath, PATHS } from '../src/paths.ts';
+import { IMPRINT_LANGS, liabilityPath, notFoundPath, PATHS } from '../src/paths.ts';
 import { exampleRelease, releaseOf, SLOTS } from '../src/release.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -22,7 +22,7 @@ function pages(context: RenderContext): Map<string, string> {
     result.set(PATHS.privacy[lang], legalPage(lang, 'privacy', context));
   }
   for (const lang of IMPRINT_LANGS) result.set(PATHS.imprint[lang], legalPage(lang, 'imprint', context));
-  result.set('/404.html', notFoundPage(context));
+  for (const lang of LANGS) result.set(notFoundPath(lang), notFoundPage(lang, context));
   return result;
 }
 
@@ -45,14 +45,14 @@ const withoutRelease = pages({ release: null, images });
 describe('pages', () => {
   it('say their language, link the other one and every page carries the legal links', () => {
     for (const [path, html] of withRelease) {
-      const lang = path === '/legal-notice/' || path === '/404.html' ? 'en' : langOf(path);
+      const lang = path === '/legal-notice/' ? 'en' : langOf(path);
       assert.match(html, new RegExp(`<html lang="${TAG[lang]}">`), path);
       const imprint = relative(path, PATHS.imprint[lang]);
       const privacy = relative(path, PATHS.privacy[lang]);
       assert.ok(html.includes(`href="${imprint}"`), `${path}: no link to the legal notice`);
       assert.ok(html.includes(`href="${privacy}"`), `${path}: no link to the privacy policy`);
       assert.ok(html.includes(`href="${relative(path, liabilityPath(lang))}"`), `${path}: no link to the liability section`);
-      if (path !== '/404.html') assert.match(html, /hreflang="de" href="https:\/\/www\.imaptransfer\.com\/de\//, path);
+      if (!path.endsWith('/404.html')) assert.match(html, /hreflang="de" href="https:\/\/www\.imaptransfer\.com\/de\//, path);
     }
   });
 
@@ -74,7 +74,7 @@ describe('pages', () => {
       const sources = [...html.matchAll(/srcset="([^"]+)"/g)].flatMap((match) => (match[1] ?? '').split(',').map((entry) => entry.trim().split(' ')[0] ?? ''));
       for (const link of [...links, ...sources]) {
         if (!link || /^(?:https?:|mailto:|tel:|#)/.test(link)) continue;
-        const target = posix.join(directory, link.split('#')[0] ?? '');
+        const target = posix.join(link.startsWith('/') ? '/' : directory, link.split('#')[0] ?? '');
         const isPage = withRelease.has(target.endsWith('/') ? target : `${target}/`) || withRelease.has(target);
         const isAsset = /^\/assets\/(?:img\/[a-z]{2}\/[a-z-]+\.png|flags\/[a-z]+\.svg)$/.test(target) && existsSync(join(root, target));
         assert.ok(isPage || files.has(target) || isAsset, `${path} links to ${link}, which does not exist`);
@@ -128,7 +128,7 @@ describe('pages', () => {
     assert.match(home, /id="daten"/);
     assert.doesNotMatch(home, /<nav\b/);
     for (const [path, html] of withRelease) {
-      const lang = path === '/legal-notice/' || path === '/404.html' ? 'en' : langOf(path);
+      const lang = path === '/legal-notice/' ? 'en' : langOf(path);
       assert.ok(html.includes(`<a class="knopf knopf-klein" href="${relative(path, `${PATHS.home[lang]}#download`)}">`), `${path}: no way to the downloads`);
     }
   });
@@ -193,10 +193,17 @@ describe('pages', () => {
     }
   });
 
-  it('answer an unknown path in every language', () => {
-    const page = notFoundPage({ release: real, images });
-    for (const lang of LANGS) assert.ok(page.includes(`>${CONTENT[lang].notFound.link}</a>`), lang);
-    assert.ok(page.includes('<p lang="pt-PT"><a href="/pt/">'));
+  it('answer an unknown path in its own language, with links from the root, and keep it out of search engines', () => {
+    for (const lang of LANGS) {
+      const page = withRelease.get(notFoundPath(lang)) ?? '';
+      assert.match(page, new RegExp(`<html lang="${TAG[lang]}">`), lang);
+      assert.ok(page.includes(`<h1 id="titel">${CONTENT[lang].notFound.title}</h1>`), lang);
+      assert.ok(page.includes(`<a href="${PATHS.home[lang]}">${CONTENT[lang].notFound.link}</a>`), lang);
+      assert.ok(page.includes('<link rel="stylesheet" href="/assets/site.css">'), `${lang}: links from the root`);
+      assert.match(page, /<meta name="robots" content="noindex">/, lang);
+    }
+    assert.equal(notFoundPath('en'), '/404.html');
+    assert.equal(notFoundPath('pt'), '/pt/404.html');
   });
 
   it('point from the downloads to the liability section of the legal notice, before and after the first version', () => {
@@ -231,6 +238,7 @@ describe('html helpers', () => {
     assert.equal(relative('/', '/#download'), './#download');
     assert.equal(relative('/404.html', '/de/'), '/de/');
     assert.equal(relative('/404.html', '/assets/site.css'), '/assets/site.css');
+    assert.equal(relative('/fr/404.html', '/fr/'), '/fr/');
     assert.equal(relative('/de/', '#download'), '#download');
   });
 

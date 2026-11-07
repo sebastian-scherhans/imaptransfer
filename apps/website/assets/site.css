@@ -117,6 +117,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* A short page, like the not-found one, still ends with the footer at the bottom of the window. */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1 0 auto;
+}
+
+/* In that column a box with auto margins would shrink to its content; the header keeps its width. */
+.kopf {
+  width: 100%;
+}
+
 img,
 picture {
   display: block;

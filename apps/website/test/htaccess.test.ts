@@ -14,8 +14,11 @@ describe('.htaccess', () => {
     assert.match(HTACCESS, /RewriteCond %\{REQUEST_URI\} !\^\/\\\.well-known\/\n/);
   });
 
-  it('keeps the not-found page and the uncached version files', () => {
+  it('keeps a not-found page per language and the uncached version files', () => {
     assert.match(HTACCESS, /^ErrorDocument 404 \/404\.html$/m);
+    for (const lang of ['de', 'fr', 'es', 'it', 'nl', 'pt']) {
+      assert.ok(HTACCESS.includes(`<If "%{REQUEST_URI} =~ m#^/${lang}/#">\n  ErrorDocument 404 /${lang}/404.html\n</If>`), lang);
+    }
     assert.match(HTACCESS, /Header set Cache-Control "no-cache"/);
   });
 });

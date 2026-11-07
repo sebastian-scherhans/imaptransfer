@@ -17,7 +17,7 @@ import { SITE } from './config.ts';
 import { LANGS } from './content.ts';
 import { HTACCESS } from './htaccess.ts';
 import { homePage, legalPage, notFoundPage, sitemap, type ImageSizes } from './pages.ts';
-import { IMPRINT_LANGS, PATHS } from './paths.ts';
+import { IMPRINT_LANGS, notFoundPath, PATHS } from './paths.ts';
 import { pngSize } from './png.ts';
 import { belongsTo, checksumList, DOWNLOADS, exampleRelease, installerName, isFeed, latestVersion, parseInstaller, releaseOf, SLOTS, type LocalFile, type Release } from './release.ts';
 
@@ -130,7 +130,7 @@ async function main(): Promise<void> {
     write(out, PATHS.privacy[lang], legalPage(lang, 'privacy', context));
   }
   for (const lang of IMPRINT_LANGS) write(out, PATHS.imprint[lang], legalPage(lang, 'imprint', context));
-  write(out, '/404.html', notFoundPage(context));
+  for (const lang of LANGS) write(out, notFoundPath(lang), notFoundPage(lang, context));
   write(out, '/sitemap.xml', sitemap());
   write(out, '/robots.txt', values.example ? 'User-agent: *\nDisallow: /\n' : `User-agent: *\nAllow: /\nSitemap: ${SITE.url}/sitemap.xml\n`);
   write(out, '/.htaccess', HTACCESS);

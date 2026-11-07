@@ -17,6 +17,9 @@ export const PATHS: Record<PageKind, Record<Lang, string>> = {
   privacy: { en: '/privacy/', de: '/de/datenschutz/', fr: '/fr/confidentialite/', es: '/es/privacidad/', it: '/it/privacy/', nl: '/nl/privacy/', pt: '/pt/privacidade/' },
 };
 
+/** The not-found page of a language, at the root of its pages. */
+export const notFoundPath = (lang: Lang) => `${PATHS.home[lang]}404.html`;
+
 /** The languages a kind of page is written in: the alternates of each other. */
 export const langsOf = (kind: PageKind): Lang[] => (kind === 'imprint' ? IMPRINT_LANGS : LANGS);
 
