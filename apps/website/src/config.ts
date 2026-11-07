@@ -6,8 +6,6 @@ export const SITE = {
   url: 'https://www.imaptransfer.com',
   repo: 'sebastian-scherhans/imaptransfer',
   email: 'hello@imaptransfer.com',
-  /** Voluntary support: a plain link, the site loads nothing from there. */
-  support: 'https://buymeacoffee.com/scherhans',
 } as const;
 
 export const githubUrl = (path = '') => `https://github.com/${SITE.repo}${path}`;

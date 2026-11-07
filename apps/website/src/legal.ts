@@ -31,8 +31,6 @@ const GITHUB_PRIVACY = 'https://docs.github.com/site-policy/privacy-policies/git
 const MICROSOFT_PRIVACY = 'https://privacy.microsoft.com/privacystatement';
 const GITHUB_ADDRESS = 'GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA';
 const HOSTER = 'Mittwald CM Service GmbH & Co. KG, Königsberger Straße 4-6, 32339 Espelkamp';
-const SUPPORT_SERVICE = 'Publisherr, Inc., 2193 Fillmore Street, San Francisco, CA 94115, USA';
-const SUPPORT_PRIVACY = 'https://buymeacoffee.com/privacy-policy';
 const LICENSE = githubUrl('/blob/main/LICENSE');
 const FONT_LICENSES = { newsreader: '/assets/fonts/newsreader-OFL.txt', hanken: '/assets/fonts/hanken-grotesk-OFL.txt' };
 const TRADEMARKS =
@@ -119,13 +117,6 @@ export const LEGAL: Record<Lang, Record<LegalKind, LegalDoc>> = {
             `Wenn Sie es beim ersten Start erlauben, fragt die App bei jedem Start bei GitHub (${GITHUB_ADDRESS}) nach, ob es eine neuere Version gibt, und lädt sie gegebenenfalls herunter. Sie können das jederzeit unten in der Seitenleiste abschalten. Die Version aus dem Microsoft Store fragt nicht bei GitHub nach, sie bekommt ihre Updates über den Store. GitHub erhält dabei Ihre IP-Adresse und die technischen Angaben der Anfrage und verarbeitet sie nach seiner eigenen [Datenschutzerklärung](${GITHUB_PRIVACY}). Rechtsgrundlage ist unser berechtigtes Interesse, Ihnen Fehlerbehebungen und Sicherheitsupdates bereitzustellen (Art. 6 Abs. 1 lit. f DSGVO).`,
             'Darüber hinaus sendet die App nichts: keine Nutzungsstatistik, keine Absturzberichte, kein Konto. Wir erhalten von der App keine Daten.',
             `IMAP Transfer wird so bereitgestellt, wie es ist, und für Datenverlust haften wir nur beschränkt. Die Einzelheiten stehen im Impressum unter [Haftung für die App](${liabilityPath('de')}).`,
-          ],
-        },
-        {
-          heading: 'Unterstützen über Buy Me a Coffee',
-          paragraphs: [
-            `Die Links zum Unterstützen führen zu Buy Me a Coffee, einem Dienst der ${SUPPORT_SERVICE}. Die Website bindet davon nichts ein. Erst wenn Sie einem dieser Links folgen, erhält der Dienst Daten von Ihnen, und es gilt seine [Datenschutzerklärung](${SUPPORT_PRIVACY}). Die Zahlung wickelt dort Stripe ab.`,
-            'Unterstützen Sie uns dort, übermittelt uns Buy Me a Coffee Ihren Namen oder Anzeigenamen, Ihre E-Mail-Adresse, Betrag und Datum sowie Ihre Nachricht, falls Sie eine schreiben. Wir nutzen diese Angaben, um die Zahlung zu verbuchen und Ihnen gegebenenfalls zu antworten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO, für die Buchhaltung Art. 6 Abs. 1 lit. c DSGVO in Verbindung mit den steuerrechtlichen Aufbewahrungspflichten. Wir bewahren die Angaben so lange auf, wie diese Pflichten es verlangen.',
           ],
         },
         {
@@ -227,13 +218,6 @@ export const LEGAL: Record<Lang, Record<LegalKind, LegalDoc>> = {
             `If you allow it at the first start, the app asks GitHub (${GITHUB_ADDRESS}) at every start whether there is a newer version and, if so, downloads it. You can switch this off at any time at the bottom of the sidebar. The version from the Microsoft Store does not contact GitHub; it gets its updates through the Store. GitHub then receives your IP address and the technical details of the request and processes them under its own [privacy statement](${GITHUB_PRIVACY}). The legal basis is our legitimate interest in providing you with bug fixes and security updates (Art. 6(1)(f) GDPR).`,
             'Beyond that, the app sends nothing: no usage statistics, no crash reports, no account. We receive no data from the app.',
             `IMAP Transfer is provided as is, and our liability for data loss is limited. The details are in the legal notice under [Liability for the app](${liabilityPath('en')}).`,
-          ],
-        },
-        {
-          heading: 'Support via Buy Me a Coffee',
-          paragraphs: [
-            `The links to support IMAP Transfer lead to Buy Me a Coffee, a service of ${SUPPORT_SERVICE}. The website embeds nothing of it. Only when you follow one of these links does the service receive data from you, and its [privacy policy](${SUPPORT_PRIVACY}) applies. Payments there are processed by Stripe.`,
-            'If you support us there, Buy Me a Coffee passes on to us your name or display name, your email address, the amount and date, and your message if you write one. We use this information to book the payment and, where appropriate, to reply to you. The legal basis is Art. 6(1)(b) GDPR, and for bookkeeping Art. 6(1)(c) GDPR together with the retention obligations of tax law. We keep the information as long as these obligations require.',
           ],
         },
         {

@@ -65,11 +65,6 @@ export interface Content {
   footer: {
     title: string;
     text: string;
-    /** The invitation to support, with its heading and button, in the closing scene. */
-    supportTitle: string;
-    support: string;
-    supportButton: string;
-    supportLink: string;
     source: string;
     license: string;
     imprint: string;
@@ -210,10 +205,6 @@ export const en: Content = {
   footer: {
     title: 'Your mail stays with you.',
     text: 'No telemetry, no account, no cloud. The app only talks to your mail servers and, if you allow it, to GitHub to look for updates.',
-    supportTitle: 'Free, and it stays that way',
-    support: 'Did IMAP Transfer save you some work? A coffee supports its development.',
-    supportButton: 'Buy me a coffee',
-    supportLink: 'Support',
     source: 'Source code on GitHub',
     license: 'MIT license',
     imprint: 'Legal notice',
@@ -354,10 +345,6 @@ export const de: Content = {
   footer: {
     title: 'Ihre Mails bleiben bei Ihnen.',
     text: 'Keine Nutzungsstatistik, kein Konto, keine Cloud. Die App spricht nur mit Ihren Mailservern und, wenn Sie es erlauben, mit GitHub, um nach Updates zu sehen.',
-    supportTitle: 'Kostenlos, und das bleibt so',
-    support: 'Hat IMAP Transfer Ihnen Arbeit erspart? Mit einem Kaffee unterstützen Sie die Entwicklung.',
-    supportButton: 'Einen Kaffee spendieren',
-    supportLink: 'Unterstützen',
     source: 'Quellcode auf GitHub',
     license: 'MIT-Lizenz',
     imprint: 'Impressum',
