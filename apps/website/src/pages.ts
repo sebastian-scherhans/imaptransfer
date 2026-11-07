@@ -20,32 +20,6 @@ const ARROW_DOWN = 'M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 19.5h14';
 /** The flag beside the link to a language. The word says it; the flag helps find it. */
 const FLAG: Record<Lang, string> = { en: 'gb', de: 'de' };
 
-/**
- * A cup of coffee seen from above, on its saucer, with a letter poured into the milk foam: drawn for
- * the invitation to support. It decorates; the text says it. Its colours are tokens in site.css.
- */
-const CUP = `<svg class="tasse" viewBox="16 16 136 136" width="136" height="136" aria-hidden="true">
-      <defs>
-        <radialGradient id="tasse-crema" cx="0.42" cy="0.38" r="0.7">
-          <stop offset="0" class="tasse-crema-hell"/>
-          <stop offset="1" class="tasse-crema-dunkel"/>
-        </radialGradient>
-      </defs>
-      <circle class="tasse-schlagschatten" cx="85" cy="88" r="60"/>
-      <circle class="tasse-porzellan" cx="80" cy="80" r="60"/>
-      <circle class="tasse-mulde" cx="80" cy="80" r="47"/>
-      <circle class="tasse-schatten" cx="84" cy="85" r="41"/>
-      <rect class="tasse-porzellan tasse-kante" x="110" y="73" width="28" height="14" rx="7" transform="rotate(28 80 80)"/>
-      <circle class="tasse-porzellan tasse-kante" cx="80" cy="80" r="40"/>
-      <circle class="tasse-kaffee" cx="80" cy="80" r="33"/>
-      <circle fill="url(#tasse-crema)" cx="80" cy="80" r="30.5"/>
-      <path class="tasse-schaum tasse-schaum-rand" d="M57.5 80c-1.5-10 6-16.5 15-16.5 3 0 5-1.5 8-1.5 4 0 6 1.5 9 1.5 8.5 0 14.5 6.5 13.5 16 1 10-5.5 16.5-14 16.5-3 0-5.5 1.5-8.5 1.5s-5.5-1.5-8.5-1.5c-9 0-15-6.5-14.5-16Z"/>
-      <g transform="rotate(-7 80 80)">
-        <rect class="tasse-schaum" x="64" y="69.5" width="32" height="21" rx="5.5"/>
-        <path class="tasse-falz" d="M67 72.5 80 81.5l13-9"/>
-      </g>
-    </svg>`;
-
 function icon(path: string): string {
   return `<svg class="symbol" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`;
 }
@@ -121,7 +95,6 @@ function footer(c: Content, kind: PageKind | 'notFound', path: string): string {
   const links = [
     `<a href="${githubUrl()}" rel="noopener">${c.footer.source}</a>`,
     `<a href="${githubUrl('/blob/main/LICENSE')}" rel="noopener">${c.footer.license}</a>`,
-    `<a href="${SITE.support}" rel="noopener">${c.footer.supportLink}</a>`,
     `<a href="${relative(path, PATHS.imprint[c.lang])}">${c.footer.imprint}</a>`,
     `<a href="${relative(path, PATHS.privacy[c.lang])}">${c.footer.privacy}</a>`,
     `<a href="${relative(path, liabilityPath(c.lang))}">${c.footer.liability}</a>`,
@@ -130,15 +103,7 @@ function footer(c: Content, kind: PageKind | 'notFound', path: string): string {
   const closing =
     kind === 'home'
       ? `<h2 class="schluss">${escape(c.footer.title)}</h2>
-  <p class="vorspann schluss-text">${escape(c.footer.text)}</p>
-  <div class="unterstuetzen">
-    ${CUP}
-    <div class="unterstuetzen-text">
-      <h3>${escape(c.footer.supportTitle)}</h3>
-      <p>${escape(c.footer.support)}</p>
-    </div>
-    <a class="knopf knopf-hell" href="${SITE.support}" rel="noopener">${escape(c.footer.supportButton)}</a>
-  </div>`
+  <p class="vorspann schluss-text">${escape(c.footer.text)}</p>`
       : '';
   return `<footer class="fuss${closing ? ' fuss-schluss' : ''}">
   <div class="fuss-innen">

@@ -136,14 +136,6 @@ describe('pages', () => {
     assert.match(withRelease.get('/') ?? '', /<a class="sprache" href="de\/" hreflang="de" lang="de"><img class="flagge" src="assets\/flags\/de\.svg" alt=""/);
   });
 
-  it('invite to support on every page as a plain link, and on the start page with a button', () => {
-    for (const [path, html] of withRelease) {
-      assert.ok(html.includes('<a href="https://buymeacoffee.com/scherhans" rel="noopener">'), `${path}: no link to support`);
-    }
-    assert.match(withRelease.get('/de/') ?? '', /<div class="unterstuetzen">[\s\S]*?class="knopf knopf-hell" href="https:\/\/buymeacoffee\.com\/scherhans" rel="noopener">Einen Kaffee spendieren</);
-    assert.match(withRelease.get('/') ?? '', /class="knopf knopf-hell" href="https:\/\/buymeacoffee\.com\/scherhans" rel="noopener">Buy me a coffee</);
-  });
-
   it('point from the downloads to the liability section of the legal notice, before and after the first version', () => {
     for (const result of [withRelease, withoutRelease]) {
       assert.ok(result.get('/de/')?.includes('<a href="impressum/#haftung">Mehr zur Haftung</a>'));
