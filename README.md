@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://imaptransfer.com/#download"><strong>Download</strong></a> ·
+  <a href="https://www.imaptransfer.com/#download"><strong>Download</strong></a> ·
   <a href="#command-line">Command line</a> ·
   <a href="docs/architecture.md">How it works</a> ·
   <a href="#auf-deutsch">Deutsch</a>
@@ -41,7 +41,7 @@ The backup is a plain folder: one `.eml` file per message, in the folder structu
 
 ## Download
 
-Desktop app: download it from [imaptransfer.com](https://imaptransfer.com/#download), each file with its checksum.
+Desktop app: download it from [imaptransfer.com](https://www.imaptransfer.com/#download), each file with its checksum.
 
 | | |
 | --- | --- |
@@ -150,4 +150,4 @@ IMAP Transfer is free and stays free. If it saved you some work, you can support
 
 ## License
 
-[MIT](LICENSE). IMAP Transfer is provided as is, without warranty; see the license and the [note on liability](https://imaptransfer.com/legal-notice/#liability). Back up your mail before you restore, migrate, sync or clean up.
+[MIT](LICENSE). IMAP Transfer is provided as is, without warranty; see the license and the [note on liability](https://www.imaptransfer.com/legal-notice/#liability). Back up your mail before you restore, migrate, sync or clean up.

@@ -49,7 +49,7 @@ describe('pages', () => {
       assert.ok(html.includes(`href="${imprint}"`), `${path}: no link to the legal notice`);
       assert.ok(html.includes(`href="${privacy}"`), `${path}: no link to the privacy policy`);
       assert.ok(html.includes(`href="${relative(path, liabilityPath(lang))}"`), `${path}: no link to the liability section`);
-      if (path !== '/404.html') assert.match(html, /hreflang="de" href="https:\/\/imaptransfer\.com\/de\//, path);
+      if (path !== '/404.html') assert.match(html, /hreflang="de" href="https:\/\/www\.imaptransfer\.com\/de\//, path);
     }
   });
 

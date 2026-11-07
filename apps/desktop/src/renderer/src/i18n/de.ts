@@ -25,7 +25,7 @@ export default {
       label: 'Beim Start nach neuen Versionen suchen',
       text: 'IMAP Transfer kann bei jedem Start bei GitHub nachfragen, ob es eine neue Version gibt, und sie installieren. GitHub erhält dabei Ihre IP-Adresse. Sie können das jederzeit unten in der Seitenleiste ändern.',
       privacy: 'Datenschutzerklärung',
-      privacyUrl: 'https://imaptransfer.com/de/datenschutz/',
+      privacyUrl: 'https://www.imaptransfer.com/de/datenschutz/',
     },
   },
   welcome: {

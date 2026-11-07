@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://imaptransfer.com
+      url: https://www.imaptransfer.com
     # One deploy at a time, and never cut off halfway.
     concurrency:
       group: website-deploy

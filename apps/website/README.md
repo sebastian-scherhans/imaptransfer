@@ -56,7 +56,7 @@ and notarization on macOS, Authenticode on Windows).
 ### The app's updater
 
 The app still asks GitHub for updates (`publish: github` in its `electron-builder.yml`). To move it
-to this site, put `provider: generic` with `url: https://imaptransfer.com/downloads` first in
+to this site, put `provider: generic` with `url: https://www.imaptransfer.com/downloads` first in
 `publish`, and keep GitHub as the second entry: the first one is what the updater asks, and releases
 still land on GitHub as the archive the website workflow reads. The feeds and files the updater
 reads are already in `/downloads/`. Then the privacy policy's paragraph on the update check names
@@ -88,12 +88,15 @@ every change to it and puts it online:
 It fetches the files of the release, builds `dist/` and copies it with rsync over SSH: the new
 downloads first, then the pages, and only at the end it removes what the new version no longer
 has. So no page ever links to a file that is missing. `.well-known/` on the server stays untouched.
-The build also writes a `.htaccess` with `404.html` as the not-found page and no caching for
-`latest*.yml` and `SHA256SUMS`.
+The build also writes a `.htaccess` (`src/htaccess.ts`): imaptransfer.com sends every path on to
+the same path at www.imaptransfer.com for good (301), `404.html` is the not-found page, and
+`latest*.yml` and `SHA256SUMS` are not cached. The site's address is the one in `src/config.ts`;
+canonical links, the sitemap and robots.txt name only that one.
 
 ### Setting it up once
 
-1. **mittwald.** A project with the domain imaptransfer.com and a folder for the site, and an SSH
+1. **mittwald.** A project with the domains www.imaptransfer.com and imaptransfer.com, both pointing
+   at the same folder for the site (the `.htaccess` does the redirect), and an SSH
    user for that project with a key of its own, used for nothing else. Sign the data processing
    agreement in mStudio: the privacy policy says one exists.
 2. **The host key.** Run `ssh-keyscan <host>` once, compare the result with the fingerprint mStudio

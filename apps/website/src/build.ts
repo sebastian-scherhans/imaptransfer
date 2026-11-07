@@ -14,6 +14,7 @@ import { dirname, join, relative as relativePath, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { SITE } from './config.ts';
+import { HTACCESS } from './htaccess.ts';
 import { homePage, legalPage, notFoundPage, sitemap, type ImageSizes } from './pages.ts';
 import { PATHS } from './paths.ts';
 import { pngSize } from './png.ts';
@@ -32,20 +33,6 @@ const FONTS: [string, string][] = [
   ['@fontsource/hanken-grotesk/files/hanken-grotesk-latin-600-normal.woff2', 'hanken-grotesk-600.woff2'],
   ['@fontsource/hanken-grotesk/LICENSE', 'hanken-grotesk-OFL.txt'],
 ];
-
-/**
- * For Apache, which serves the site at mittwald: the not-found page, and no caching for the files
- * that name the current version, so the app's updater and the checksums never lag behind. Each
- * block only applies where its module is there; elsewhere the file is ignored.
- */
-const HTACCESS = `ErrorDocument 404 /404.html
-
-<IfModule mod_headers.c>
-  <FilesMatch "^(latest.*\\.yml|SHA256SUMS)$">
-    Header set Cache-Control "no-cache"
-  </FilesMatch>
-</IfModule>
-`;
 
 /** The screenshots in assets/img/<lang>/, taken at twice the size they are shown. */
 function screenshots(): ImageSizes {
