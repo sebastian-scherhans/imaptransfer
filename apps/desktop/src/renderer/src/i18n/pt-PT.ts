@@ -27,7 +27,7 @@ const ptPT: typeof de = {
       label: 'Procurar novas versões ao iniciar',
       text: 'Em cada arranque, o IMAP Transfer pode perguntar ao GitHub se existe uma nova versão e instalá-la. O GitHub recebe assim o seu endereço IP. Pode alterar isto em qualquer momento na parte inferior da barra lateral.',
       privacy: 'Política de privacidade',
-      privacyUrl: 'https://imaptransfer.com/privacy/',
+      privacyUrl: 'https://www.imaptransfer.com/privacy/',
     },
   },
   welcome: {

@@ -3,7 +3,7 @@
  * updater and the release workflow name the same repository; if it moves, they move together.
  */
 export const SITE = {
-  url: 'https://imaptransfer.com',
+  url: 'https://www.imaptransfer.com',
   repo: 'sebastian-scherhans/imaptransfer',
   email: 'hello@imaptransfer.com',
   /** Voluntary support: a plain link, the site loads nothing from there. */
