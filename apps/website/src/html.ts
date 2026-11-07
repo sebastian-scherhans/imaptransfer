@@ -25,18 +25,21 @@ export function fill(template: string, values: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (whole, key: string) => values[key] ?? whole);
 }
 
-/** The not-found page. The server answers every unknown address with it, wherever that address is. */
-export const NOT_FOUND = '/404.html';
+/**
+ * A not-found page: one per language, at the root of its pages (/404.html, /de/404.html …). The
+ * server answers every unknown address under a language with that language's.
+ */
+export const isNotFound = (path: string) => path.endsWith('/404.html');
 
 /**
  * A link from one page to another path of the site, relative, so the pages work from any folder:
  * a preview on disk, a test server, a sub-path. Page paths end in "/", files do not. The not-found
- * page is the exception: shown at /de/no/such/page/, a relative link would miss, so its links start
- * at the root.
+ * pages are the exception: shown at /de/no/such/page/, a relative link would miss, so their links
+ * start at the root.
  */
 export function relative(from: string, to: string): string {
   if (to.startsWith('#')) return to;
-  if (from === NOT_FOUND) return to;
+  if (isNotFound(from)) return to;
   const [path = '', hash] = to.split('#');
   const fromDirectory = from.endsWith('/') ? from : `${posix.dirname(from)}/`;
   let link = posix.relative(fromDirectory, path);

@@ -93,7 +93,8 @@ It fetches the files of the release, builds `dist/` and copies it with rsync ove
 downloads first, then the pages, and only at the end it removes what the new version no longer
 has. So no page ever links to a file that is missing. `.well-known/` on the server stays untouched.
 The build also writes a `.htaccess` (`src/htaccess.ts`): imaptransfer.com sends every path on to
-the same path at www.imaptransfer.com for good (301), `404.html` is the not-found page, and
+the same path at www.imaptransfer.com for good (301), an unknown address under a language gets
+that language's not-found page (`/fr/404.html` …) and any other the English `/404.html`, and
 `latest*.yml` and `SHA256SUMS` are not cached. The site's address is the one in `src/config.ts`;
 canonical links, the sitemap and robots.txt name only that one.
 

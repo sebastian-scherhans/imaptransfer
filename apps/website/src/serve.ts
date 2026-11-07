@@ -4,6 +4,8 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { LANGS } from './content.ts';
+import { notFoundPath, PATHS } from './paths.ts';
 
 const root = join(fileURLToPath(new URL('..', import.meta.url)), process.argv[2] ?? 'dist');
 const port = Number(process.env.PORT ?? 4321);
@@ -32,7 +34,9 @@ createServer((request, response) => {
   }
   if (existsSync(file) && statSync(file).isDirectory()) file = join(file, 'index.html');
   const found = existsSync(file);
-  const target = found ? file : join(root, '404.html');
+  // As on the server: the not-found page of the language the address is under, else the English one.
+  const lang = LANGS.find((code) => code !== 'en' && path.startsWith(PATHS.home[code])) ?? 'en';
+  const target = found ? file : join(root, notFoundPath(lang));
   response.writeHead(found ? 200 : 404, { 'Content-Type': TYPES[extname(target)] ?? 'application/octet-stream' });
   createReadStream(target).pipe(response);
 })
