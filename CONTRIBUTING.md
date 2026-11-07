@@ -39,7 +39,7 @@ When working inside VS Code's terminal, unset `ELECTRON_RUN_AS_NODE` first (`env
 
 - Every change to the engine comes with a test, ideally an integration test against GreenMail.
 - Nothing may lose mail or create duplicates when a run is cancelled, crashes or loses its connection. If a change touches backup, restore or migration, add a test for the interrupted case.
-- User-facing text of the app goes into `apps/desktop/src/renderer/src/i18n/` and, for menus and dialogs, `apps/desktop/src/main/texts.ts`, in all seven languages. The website's goes into `apps/website/src/content.ts` and `apps/website/src/legal.ts`, in English and German.
+- User-facing text of the app goes into `apps/desktop/src/renderer/src/i18n/` and, for menus and dialogs, `apps/desktop/src/main/texts.ts`, in all seven languages. The website's goes into `apps/website/src/content.ts` and `apps/website/src/legal.ts`: the landing page and the privacy policy in the same seven languages, the legal notice in English and German.
 - TypeScript runs directly in Node for tests, so only erasable syntax (no `enum`, no parameter properties).
 
 ## Reporting security issues

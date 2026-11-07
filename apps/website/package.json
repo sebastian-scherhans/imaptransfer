@@ -2,7 +2,7 @@
   "name": "imaptransfer-website",
   "private": true,
   "type": "module",
-  "description": "The website imaptransfer.com: landing page, downloads with checksums, legal notice and privacy policy, in English and German",
+  "description": "The website imaptransfer.com: landing page, downloads with checksums, legal notice and privacy policy, in the seven languages of the app",
   "license": "MIT",
   "engines": {
     "node": ">=24"

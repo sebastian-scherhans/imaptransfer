@@ -14,9 +14,10 @@ import { dirname, join, relative as relativePath, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { SITE } from './config.ts';
+import { LANGS } from './content.ts';
 import { HTACCESS } from './htaccess.ts';
 import { homePage, legalPage, notFoundPage, sitemap, type ImageSizes } from './pages.ts';
-import { PATHS } from './paths.ts';
+import { IMPRINT_LANGS, PATHS } from './paths.ts';
 import { pngSize } from './png.ts';
 import { belongsTo, checksumList, DOWNLOADS, exampleRelease, installerName, isFeed, latestVersion, parseInstaller, releaseOf, SLOTS, type LocalFile, type Release } from './release.ts';
 
@@ -37,7 +38,7 @@ const FONTS: [string, string][] = [
 /** The screenshots in assets/img/<lang>/, taken at twice the size they are shown. */
 function screenshots(): ImageSizes {
   const sizes: ImageSizes = new Map();
-  for (const lang of ['en', 'de']) {
+  for (const lang of LANGS) {
     const directory = join(root, 'assets', 'img', lang);
     for (const file of readdirSync(directory).filter((name) => name.endsWith('.png'))) {
       sizes.set(`${lang}/${file.replace(/\.png$/, '')}`, pngSize(readFileSync(join(directory, file))));
@@ -124,11 +125,11 @@ async function main(): Promise<void> {
   const context = { release, images: screenshots() };
 
   rmSync(out, { recursive: true, force: true });
-  for (const lang of ['en', 'de'] as const) {
+  for (const lang of LANGS) {
     write(out, PATHS.home[lang], homePage(lang, context));
-    write(out, PATHS.imprint[lang], legalPage(lang, 'imprint', context));
     write(out, PATHS.privacy[lang], legalPage(lang, 'privacy', context));
   }
+  for (const lang of IMPRINT_LANGS) write(out, PATHS.imprint[lang], legalPage(lang, 'imprint', context));
   write(out, '/404.html', notFoundPage(context));
   write(out, '/sitemap.xml', sitemap());
   write(out, '/robots.txt', values.example ? 'User-agent: *\nDisallow: /\n' : `User-agent: *\nAllow: /\nSitemap: ${SITE.url}/sitemap.xml\n`);
