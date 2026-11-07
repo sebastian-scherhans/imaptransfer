@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 30">
+  <!-- The Spanish flag in 3:2, beside the name of Spanish; at 21 pixels without the coat of arms. -->
+  <path d="M0 0h45v30H0z" fill="#aa151b"/>
+  <path d="M0 7.5h45v15H0z" fill="#f1bf00"/>
+</svg>

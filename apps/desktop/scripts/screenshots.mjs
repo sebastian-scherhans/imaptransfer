@@ -6,6 +6,7 @@
 //   pnpm --filter imaptransfer-desktop screenshots docs          docs/screenshots/, English
 //   pnpm --filter imaptransfer-desktop screenshots website en    apps/website/assets/img/en/
 //   pnpm --filter imaptransfer-desktop screenshots website de    apps/website/assets/img/de/
+//   … website fr | es | it | nl | pt                              the other languages of the website
 //
 // Inside VS Code's terminal, unset ELECTRON_RUN_AS_NODE first (see CONTRIBUTING.md).
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
@@ -16,32 +17,44 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const [target = '', lang = 'en'] = process.argv.slice(2).filter((arg) => !arg.startsWith('-'));
-if (!['docs', 'website'].includes(target) || !['en', 'de'].includes(lang) || (target === 'docs' && lang !== 'en')) {
-  console.error('Usage: screenshots docs | screenshots website <en|de>');
+/**
+ * Per language of the website: the app's language and locale, the folder names a mailbox there has,
+ * and the labels of the buttons the script clicks, as the app shows them in that language.
+ */
+const LANGS = {
+  en: { app: 'en', locale: 'en-US', archive: 'Archive', invoices: 'Invoices', sent: 'Sent', sentTarget: 'Sent Items', cont: 'Continue', cancel: 'Cancel' },
+  de: { app: 'de', locale: 'de-DE', archive: 'Archiv', invoices: 'Rechnungen', sent: 'Gesendet', sentTarget: 'Gesendete Elemente', cont: 'Weiter', cancel: 'Abbrechen' },
+  fr: { app: 'fr', locale: 'fr-FR', archive: 'Archives', invoices: 'Factures', sent: 'Envoyés', sentTarget: 'Éléments envoyés', cont: 'Continuer', cancel: 'Annuler' },
+  es: { app: 'es', locale: 'es-ES', archive: 'Archivo', invoices: 'Facturas', sent: 'Enviados', sentTarget: 'Elementos enviados', cont: 'Continuar', cancel: 'Cancelar' },
+  it: { app: 'it', locale: 'it-IT', archive: 'Archivio', invoices: 'Fatture', sent: 'Inviati', sentTarget: 'Posta inviata', cont: 'Continua', cancel: 'Annulla' },
+  nl: { app: 'nl', locale: 'nl-NL', archive: 'Archief', invoices: 'Facturen', sent: 'Verzonden', sentTarget: 'Verzonden items', cont: 'Verder', cancel: 'Annuleren' },
+  pt: { app: 'pt-PT', locale: 'pt-PT', archive: 'Arquivo', invoices: 'Faturas', sent: 'Enviados', sentTarget: 'Itens Enviados', cont: 'Continuar', cancel: 'Cancelar' },
+};
+if (!['docs', 'website'].includes(target) || !(lang in LANGS) || (target === 'docs' && lang !== 'en')) {
+  console.error(`Usage: screenshots docs | screenshots website <${Object.keys(LANGS).join('|')}>`);
   process.exit(2);
 }
 const docs = target === 'docs';
-const de = lang === 'de';
+const { app: appLanguage, locale, ...names } = LANGS[lang];
 const out = docs ? join(root, 'docs', 'screenshots') : join(root, 'apps', 'website', 'assets', 'img', lang);
 const { roundRemaining } = await import(join(root, 'packages', 'core', 'dist', 'estimate.js'));
 
 const data = mkdtempSync(join(tmpdir(), 'imaptransfer-screenshots-'));
 app.setPath('userData', join(data, 'user'));
 app.setPath('documents', join(data, 'documents'));
-app.commandLine.appendSwitch('lang', de ? 'de-DE' : 'en-US');
+app.commandLine.appendSwitch('lang', locale);
 app.commandLine.appendSwitch('use-mock-keychain');
 app.commandLine.appendSwitch('password-store', 'basic');
 mkdirSync(join(data, 'user'), { recursive: true });
-writeFileSync(join(data, 'user', 'settings.json'), JSON.stringify({ version: 1, theme: 'light', language: lang, accountOrder: 'address' }));
+writeFileSync(join(data, 'user', 'settings.json'), JSON.stringify({ version: 1, theme: 'light', language: appLanguage, accountOrder: 'address', updateCheck: false }));
 
 /** The same address at two servers, as before a move, and a third account. */
 const OLD = { user: 'kontakt@example.org', host: 'imap.example.net' };
 const NEW = { user: 'kontakt@example.org', host: 'mail.example.org' };
 const OTHER = { user: 'anna@example.com', host: 'mail.example.com' };
 
-const words = de
-  ? { archive: 'Archiv', invoices: 'Rechnungen', sent: 'Gesendet', sentTarget: 'Gesendete Elemente', cont: 'Weiter', cancel: 'Abbrechen' }
-  : { archive: 'Archive', invoices: 'Invoices', sent: 'Sent', sentTarget: 'Sent Items', quote: 'Quote for the kitchen', shipped: 'Your order has shipped', plan: 'Floor plan ground floor.pdf', cont: 'Continue', test: 'Start test run', cancel: 'Cancel', trash: 'Trash' };
+// The documentation is English only and goes on to the test run, a running backup and its report.
+const words = { ...names, quote: 'Quote for the kitchen', shipped: 'Your order has shipped', plan: 'Floor plan ground floor.pdf', test: 'Start test run', trash: 'Trash' };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let window;

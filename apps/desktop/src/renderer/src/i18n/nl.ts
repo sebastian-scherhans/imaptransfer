@@ -27,7 +27,7 @@ const nl: typeof de = {
       label: 'Bij het starten zoeken naar nieuwe versies',
       text: 'IMAP Transfer kan bij elke start aan GitHub vragen of er een nieuwe versie is en die installeren. GitHub ontvangt daarbij uw IP-adres. U kunt dit altijd wijzigen onder in de zijbalk.',
       privacy: 'Privacyverklaring',
-      privacyUrl: 'https://www.imaptransfer.com/privacy/',
+      privacyUrl: 'https://www.imaptransfer.com/nl/privacy/',
     },
   },
   welcome: {

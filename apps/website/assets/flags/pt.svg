@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 30">
+  <!-- The Portuguese flag in 3:2, beside the name of Portuguese: green and red, the armillary
+       sphere drawn small, as a yellow ring with a shield, which is all that reads at 21 pixels. -->
+  <path d="M0 0h18v30H0z" fill="#046a38"/>
+  <path d="M18 0h27v30H18z" fill="#da291c"/>
+  <circle cx="18" cy="15" r="6.5" fill="none" stroke="#ffe900" stroke-width="2"/>
+  <path d="M14.8 11.6h6.4v4.4a3.2 3.2 0 0 1-6.4 0z" fill="#fff" stroke="#da291c" stroke-width="1"/>
+</svg>

@@ -4,23 +4,24 @@ import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it } from 'node:test';
 import { formatSize, inline, relative } from '../src/html.ts';
-import { homePage, legalPage, notFoundPage, type ImageSizes, type RenderContext } from '../src/pages.ts';
-import { liabilityPath, PATHS } from '../src/paths.ts';
+import { CONTENT, LANGS, TAG, type Content, type Lang } from '../src/content.ts';
+import { homePage, legalPage, notFoundPage, sitemap, type ImageSizes, type RenderContext } from '../src/pages.ts';
+import { IMPRINT_LANGS, liabilityPath, PATHS } from '../src/paths.ts';
 import { exampleRelease, releaseOf, SLOTS } from '../src/release.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FONTS = ['newsreader-500.woff2', 'newsreader-600.woff2', 'newsreader-OFL.txt', 'hanken-grotesk-400.woff2', 'hanken-grotesk-600.woff2', 'hanken-grotesk-OFL.txt'];
 const images: ImageSizes = new Map(
-  ['en', 'de'].flatMap((lang) => ['app', 'app-narrow', 'migrate'].map((name) => [`${lang}/${name}`, { width: 2000, height: 1000 }] as const)),
+  LANGS.flatMap((lang) => ['app', 'app-narrow', 'migrate'].map((name) => [`${lang}/${name}`, { width: 2000, height: 1000 }] as const)),
 );
 
 function pages(context: RenderContext): Map<string, string> {
   const result = new Map<string, string>();
-  for (const lang of ['en', 'de'] as const) {
+  for (const lang of LANGS) {
     result.set(PATHS.home[lang], homePage(lang, context));
-    result.set(PATHS.imprint[lang], legalPage(lang, 'imprint', context));
     result.set(PATHS.privacy[lang], legalPage(lang, 'privacy', context));
   }
+  for (const lang of IMPRINT_LANGS) result.set(PATHS.imprint[lang], legalPage(lang, 'imprint', context));
   result.set('/404.html', notFoundPage(context));
   return result;
 }
@@ -37,13 +38,15 @@ const real = releaseOf(
   '2026-10-29T08:30:00Z',
 );
 const withRelease = pages({ release: real, images });
+/** The language of a page by its path: English at the root, every other under its code. */
+const langOf = (path: string): Lang => (LANGS.find((lang) => lang !== 'en' && path.startsWith(`/${lang}/`)) ?? 'en');
 const withoutRelease = pages({ release: null, images });
 
 describe('pages', () => {
   it('say their language, link the other one and every page carries the legal links', () => {
     for (const [path, html] of withRelease) {
-      const lang = path.startsWith('/de/') ? 'de' : 'en';
-      assert.match(html, new RegExp(`<html lang="${lang}">`), path);
+      const lang = path === '/legal-notice/' || path === '/404.html' ? 'en' : langOf(path);
+      assert.match(html, new RegExp(`<html lang="${TAG[lang]}">`), path);
       const imprint = relative(path, PATHS.imprint[lang]);
       const privacy = relative(path, PATHS.privacy[lang]);
       assert.ok(html.includes(`href="${imprint}"`), `${path}: no link to the legal notice`);
@@ -58,8 +61,7 @@ describe('pages', () => {
       '/assets/site.css',
       '/assets/site.js',
       '/assets/icon.svg',
-      '/assets/flags/gb.svg',
-      '/assets/flags/de.svg',
+      ...['gb', 'de', 'fr', 'es', 'it', 'nl', 'pt'].map((flag) => `/assets/flags/${flag}.svg`),
       '/assets/favicon.svg',
       '/favicon.ico',
       '/apple-touch-icon.png',
@@ -74,7 +76,7 @@ describe('pages', () => {
         if (!link || /^(?:https?:|mailto:|tel:|#)/.test(link)) continue;
         const target = posix.join(directory, link.split('#')[0] ?? '');
         const isPage = withRelease.has(target.endsWith('/') ? target : `${target}/`) || withRelease.has(target);
-        const isAsset = /^\/assets\/(?:img\/(?:en|de)\/[a-z-]+\.png|flags\/[a-z]+\.svg)$/.test(target) && existsSync(join(root, target));
+        const isAsset = /^\/assets\/(?:img\/[a-z]{2}\/[a-z-]+\.png|flags\/[a-z]+\.svg)$/.test(target) && existsSync(join(root, target));
         assert.ok(isPage || files.has(target) || isAsset, `${path} links to ${link}, which does not exist`);
       }
     }
@@ -126,14 +128,75 @@ describe('pages', () => {
     assert.match(home, /id="daten"/);
     assert.doesNotMatch(home, /<nav\b/);
     for (const [path, html] of withRelease) {
-      const lang = path.startsWith('/de/') ? 'de' : 'en';
+      const lang = path === '/legal-notice/' || path === '/404.html' ? 'en' : langOf(path);
       assert.ok(html.includes(`<a class="knopf knopf-klein" href="${relative(path, `${PATHS.home[lang]}#download`)}">`), `${path}: no way to the downloads`);
     }
   });
 
-  it('show the flag of the other language beside its name', () => {
-    assert.match(withRelease.get('/de/') ?? '', /<a class="sprache" href="\.\.\/" hreflang="en" lang="en"><img class="flagge" src="\.\.\/assets\/flags\/gb\.svg" alt=""/);
-    assert.match(withRelease.get('/') ?? '', /<a class="sprache" href="de\/" hreflang="de" lang="de"><img class="flagge" src="assets\/flags\/de\.svg" alt=""/);
+  it('list every language in the header and the footer, with its flag, the current one marked', () => {
+    for (const [path, html] of withRelease) {
+      const menu = html.match(/<details class="sprache">[\s\S]*?<\/summary>\s*(<ul class="sprachen">[\s\S]*?<\/ul>)/)?.[1] ?? '';
+      const footer = html.match(/<ul class="fuss-sprachen"[\s\S]*?<\/ul>/)?.[0] ?? '';
+      for (const list of [menu, footer]) {
+        assert.equal(list.match(/<li>/g)?.length, LANGS.length, `${path}: not every language`);
+        assert.equal(list.match(/aria-current="true"/g)?.length, 1, `${path}: no current language`);
+        assert.equal(list.match(/class="flagge"/g)?.length, LANGS.length, `${path}: a flag is missing`);
+      }
+    }
+    const french = withRelease.get('/fr/') ?? '';
+    assert.match(french, /<summary aria-label="Langue: Français"><img class="flagge" src="\.\.\/assets\/flags\/fr\.svg"[^>]*>Français<\/summary>/);
+    assert.ok(french.includes('<a href="../pt/" hreflang="pt" lang="pt-PT">'), 'Portuguese, of Portugal');
+  });
+
+  it('switch to the same page in the other language, or to its start page where there is none', () => {
+    assert.ok(withRelease.get('/fr/confidentialite/')?.includes('<a href="../../de/datenschutz/" hreflang="de" lang="de">'));
+    assert.ok(withRelease.get('/de/impressum/')?.includes('<a href="../../legal-notice/" hreflang="en" lang="en">'));
+    assert.ok(withRelease.get('/legal-notice/')?.includes('<a href="../nl/" hreflang="nl" lang="nl">'));
+  });
+
+  it('name as alternates only the languages a page is written in', () => {
+    const alternates = (html: string) => [...html.matchAll(/<link rel="alternate" hreflang="([a-z-]+)"/g)].map((match) => match[1]);
+    assert.deepEqual(alternates(withRelease.get('/es/') ?? ''), [...LANGS, 'x-default']);
+    assert.deepEqual(alternates(withRelease.get('/it/privacy/') ?? ''), [...LANGS, 'x-default']);
+    assert.deepEqual(alternates(withRelease.get('/legal-notice/') ?? ''), ['en', 'de', 'x-default']);
+    const map = sitemap();
+    assert.equal(map.match(/<loc>/g)?.length, 2 * LANGS.length + IMPRINT_LANGS.length);
+    assert.ok(map.includes('<loc>https://www.imaptransfer.com/pt/privacidade/</loc>'));
+    assert.doesNotMatch(map, /<loc>[^<]*\/fr\/[^<]*impressum|legal-notice\/<\/loc>[\s\S]*<loc>https:\/\/www\.imaptransfer\.com\/legal-notice\//);
+  });
+
+  it('lead the new languages to the English legal notice and to a privacy policy in their own words, the German one binding', () => {
+    for (const lang of LANGS.filter((lang) => !IMPRINT_LANGS.includes(lang as never))) {
+      const home = withRelease.get(PATHS.home[lang]) ?? '';
+      assert.ok(home.includes(`<a href="../legal-notice/">${CONTENT[lang].footer.imprint}</a>`), `${lang}: legal notice`);
+      assert.ok(home.includes(`<a href="${PATHS.privacy[lang].slice(4)}">${CONTENT[lang].footer.privacy}</a>`), `${lang}: privacy`);
+      assert.ok(home.includes('href="../legal-notice/#liability"'), `${lang}: liability`);
+      const privacy = withRelease.get(PATHS.privacy[lang]) ?? '';
+      assert.match(privacy, /<\/h1>\s*<p>[^<]*<a href="\.\.\/\.\.\/de\/datenschutz\/">/, `${lang}: the binding German version first`);
+    }
+  });
+
+  it('keep placeholders and commands in every translation', () => {
+    const strings = (value: unknown, at = ''): [string, string][] =>
+      typeof value === 'string' ? [[at, value]] : value && typeof value === 'object' ? Object.entries(value).flatMap(([key, inner]) => strings(inner, `${at}.${key}`)) : [];
+    const english = new Map(strings(CONTENT.en));
+    const marks = (text: string) => [...text.matchAll(/\{[a-z]+\}|`[^`]+`/g)].map((match) => match[0]).filter((mark) => !mark.startsWith('`') || /^`[0-9.]+`$|^`\.eml`$|^`imaptransfer`$/.test(mark));
+    for (const lang of LANGS) {
+      const own = new Map(strings(CONTENT[lang] as Content));
+      assert.deepEqual([...own.keys()], [...english.keys()], `${lang}: other fields than English`);
+      for (const [at, text] of english) {
+        if (at.startsWith('.lang') || at.startsWith('.locale') || at === '.cli.code' || at === '.backup.tree') continue;
+        assert.deepEqual(marks(own.get(at) ?? '').sort(), marks(text).sort(), `${lang}${at}`);
+      }
+      const commands = (code: string) => code.split('\n').filter((line) => line && !line.startsWith('#'));
+      assert.deepEqual(commands(CONTENT[lang].cli.code), commands(CONTENT.en.cli.code), `${lang}: commands`);
+    }
+  });
+
+  it('answer an unknown path in every language', () => {
+    const page = notFoundPage({ release: real, images });
+    for (const lang of LANGS) assert.ok(page.includes(`>${CONTENT[lang].notFound.link}</a>`), lang);
+    assert.ok(page.includes('<p lang="pt-PT"><a href="/pt/">'));
   });
 
   it('point from the downloads to the liability section of the legal notice, before and after the first version', () => {

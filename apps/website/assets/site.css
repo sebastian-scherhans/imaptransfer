@@ -312,7 +312,12 @@ strong {
   gap: 22px;
 }
 
+/* The language menu: the current language as a summary, the list below it. No script needed. */
 .sprache {
+  position: relative;
+}
+
+.sprache summary {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -320,12 +325,68 @@ strong {
   color: var(--tinte);
   font-size: var(--klein);
   font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.sprache summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A small chevron after the name: it turns when the list is open. */
+.sprache summary::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin: -3px 2px 0;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.sprache[open] summary::after {
+  margin-top: 3px;
+  transform: rotate(225deg);
+}
+
+.sprache summary:hover {
+  text-decoration: underline;
+}
+
+.sprachen {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10;
+  min-width: 184px;
+  margin: 4px 0 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: var(--radius);
+  background: var(--papier);
+  box-shadow: var(--schatten-ausschnitt);
+}
+
+.sprachen a,
+.sprachen span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--tinte);
+  font-size: var(--klein);
   text-decoration: none;
 }
 
-.sprache:hover {
+.sprachen a:hover {
+  background: var(--akzent-sanft);
   color: var(--tinte);
-  text-decoration: underline;
+}
+
+.sprachen [aria-current] {
+  font-weight: 600;
 }
 
 /* A flag is a small picture beside the word: a hairline keeps the white of a flag off the ground. */
@@ -850,6 +911,29 @@ strong {
 
 .fuss-links:first-child {
   margin-top: 0;
+}
+
+/* Every language once more, in a quieter row under the links. */
+.fuss-sprachen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 24px;
+  margin-top: 8px;
+  padding: 0;
+  list-style: none;
+  font-size: var(--klein);
+}
+
+.fuss-sprachen a,
+.fuss-sprachen span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.fuss-sprachen [aria-current] {
+  font-weight: 600;
 }
 
 .fuss-links a {

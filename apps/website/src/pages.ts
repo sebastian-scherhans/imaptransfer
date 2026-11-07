@@ -1,8 +1,8 @@
 import { githubUrl, SITE } from './config.ts';
-import { CONTENT, type Content, type Lang } from './content.ts';
+import { CONTENT, LANGS, NAMES, TAG, type Content, type Lang } from './content.ts';
 import { escape, fill, formatDate, formatSize, groupedChecksum, inline, NOT_FOUND, relative } from './html.ts';
 import { LEGAL, type LegalKind } from './legal.ts';
-import { liabilityPath, PATHS, type PageKind } from './paths.ts';
+import { langsOf, liabilityPath, PATHS, type PageKind } from './paths.ts';
 import { SLOTS, type Download, type Platform, type Release, type Slot } from './release.ts';
 
 /** Pixel size of each screenshot, by "lang/name"; the build reads it from the files. */
@@ -13,12 +13,10 @@ export interface RenderContext {
   images: ImageSizes;
 }
 
-const LANGS: Lang[] = ['en', 'de'];
-const other = (lang: Lang): Lang => (lang === 'en' ? 'de' : 'en');
 const SHIELD = 'M12 3 4.5 6v5.5c0 4.6 3.2 8.2 7.5 9.5 4.3-1.3 7.5-4.9 7.5-9.5V6zM9 12l2 2 4-4';
 const ARROW_DOWN = 'M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 19.5h14';
-/** The flag beside the link to a language. The word says it; the flag helps find it. */
-const FLAG: Record<Lang, string> = { en: 'gb', de: 'de' };
+/** The flag beside the name of a language. The word says it; the flag helps find it. */
+const FLAG: Record<Lang, string> = { en: 'gb', de: 'de', fr: 'fr', es: 'es', it: 'it', nl: 'nl', pt: 'pt' };
 
 function icon(path: string): string {
   return `<svg class="symbol" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`;
@@ -46,7 +44,7 @@ function head(c: Content, kind: PageKind | 'notFound', path: string, title: stri
     kind === 'notFound'
       ? ''
       : [
-          ...LANGS.map((lang) => `<link rel="alternate" hreflang="${lang}" href="${SITE.url}${PATHS[kind][lang]}">`),
+          ...langsOf(kind).map((lang) => `<link rel="alternate" hreflang="${lang}" href="${SITE.url}${PATHS[kind][lang]}">`),
           `<link rel="alternate" hreflang="x-default" href="${SITE.url}${PATHS[kind].en}">`,
         ].join('\n  ');
   const image = `${SITE.url}/assets/img/${c.lang}/app.png`;
@@ -74,18 +72,37 @@ function head(c: Content, kind: PageKind | 'notFound', path: string, title: stri
 </head>`;
 }
 
-function languageLink(c: Content, kind: PageKind | 'notFound', path: string, className?: string): string {
-  const switchTo = other(c.lang);
-  const target = kind === 'notFound' ? PATHS.home[switchTo] : PATHS[kind][switchTo];
-  const flag = `<img class="flagge" src="${relative(path, `/assets/flags/${FLAG[switchTo]}.svg`)}" alt="" width="21" height="14">`;
-  return `<a${className ? ` class="${className}"` : ''} href="${relative(path, target)}" hreflang="${switchTo}" lang="${switchTo}">${flag}${c.nav.language}</a>`;
+/** The same page in another language, or that language's start page where the page has none in it. */
+function inLanguage(kind: PageKind | 'notFound', lang: Lang): string {
+  return kind !== 'notFound' && langsOf(kind).includes(lang) ? PATHS[kind][lang] : PATHS.home[lang];
+}
+
+function flag(path: string, lang: Lang): string {
+  return `<img class="flagge" src="${relative(path, `/assets/flags/${FLAG[lang]}.svg`)}" alt="" width="21" height="14">`;
+}
+
+/** Every language by its own name; the current one is marked, not linked. */
+function languageItems(c: Content, kind: PageKind | 'notFound', path: string): string {
+  return LANGS.map((lang) =>
+    lang === c.lang
+      ? `<li><span aria-current="true">${flag(path, lang)}${NAMES[lang]}</span></li>`
+      : `<li><a href="${relative(path, inLanguage(kind, lang))}" hreflang="${lang}" lang="${TAG[lang]}">${flag(path, lang)}${NAMES[lang]}</a></li>`,
+  ).join('');
+}
+
+/** In the header: the current language, opening the list of all of them. Works without script. */
+function languageMenu(c: Content, kind: PageKind | 'notFound', path: string): string {
+  return `<details class="sprache">
+      <summary aria-label="${escape(c.nav.language)}: ${NAMES[c.lang]}">${flag(path, c.lang)}${NAMES[c.lang]}</summary>
+      <ul class="sprachen">${languageItems(c, kind, path)}</ul>
+    </details>`;
 }
 
 function header(c: Content, kind: PageKind | 'notFound', path: string): string {
   return `<header class="kopf">
   <a class="marke" href="${relative(path, PATHS.home[c.lang])}"><img src="${relative(path, '/assets/icon.svg')}" alt="" width="36" height="36"><span>IMAP Transfer</span></a>
   <div class="kopf-rechts">
-    ${languageLink(c, kind, path, 'sprache')}
+    ${languageMenu(c, kind, path)}
     <a class="knopf knopf-klein" href="${relative(path, `${PATHS.home[c.lang]}#download`)}">${escape(c.nav.download)}</a>
   </div>
 </header>`;
@@ -98,7 +115,6 @@ function footer(c: Content, kind: PageKind | 'notFound', path: string): string {
     `<a href="${relative(path, PATHS.imprint[c.lang])}">${c.footer.imprint}</a>`,
     `<a href="${relative(path, PATHS.privacy[c.lang])}">${c.footer.privacy}</a>`,
     `<a href="${relative(path, liabilityPath(c.lang))}">${c.footer.liability}</a>`,
-    languageLink(c, kind, path),
   ];
   const closing =
     kind === 'home'
@@ -109,6 +125,7 @@ function footer(c: Content, kind: PageKind | 'notFound', path: string): string {
   <div class="fuss-innen">
   ${closing}
   <ul class="fuss-links">${links.map((link) => `<li>${link}</li>`).join('')}</ul>
+  <ul class="fuss-sprachen" aria-label="${escape(c.nav.language)}">${languageItems(c, kind, path)}</ul>
   </div>
 </footer>`;
 }
@@ -116,7 +133,7 @@ function footer(c: Content, kind: PageKind | 'notFound', path: string): string {
 function frame(c: Content, kind: PageKind | 'notFound', path: string, title: string, description: string, main: string, context: RenderContext): string {
   const banner = context.release?.example ? `<p class="vorschau" role="note">${escape(c.preview)}</p>` : '';
   return `<!doctype html>
-<html lang="${c.lang}">
+<html lang="${TAG[c.lang]}">
 ${head(c, kind, path, title, description, context)}
 <body>
 <a class="springen" href="#inhalt">${c.nav.skip}</a>
@@ -343,6 +360,7 @@ function ownLinks(html: string, path: string): string {
 export function legalPage(lang: Lang, kind: LegalKind, context: RenderContext): string {
   const c = CONTENT[lang];
   const doc = LEGAL[lang][kind];
+  if (!doc) throw new Error(`No ${kind} in ${lang}`);
   const path = PATHS[kind][lang];
   const sections = doc.sections
     .map((section) => `${section.heading ? `<h2${section.id ? ` id="${section.id}"` : ''}>${escape(section.heading)}</h2>` : ''}${section.paragraphs.map((text) => `<p>${ownLinks(inline(text), path)}</p>`).join('')}`)
@@ -355,25 +373,30 @@ export function legalPage(lang: Lang, kind: LegalKind, context: RenderContext): 
   return frame(c, kind, path, `${doc.title}: IMAP Transfer`, doc.description, main, context);
 }
 
-/** One page for both languages: the server answers every unknown path with it. */
+/** One page for every language: the server answers every unknown path with it. */
 export function notFoundPage(context: RenderContext): string {
   const path = NOT_FOUND;
+  const lines = LANGS.map((lang, index) => {
+    const t = CONTENT[lang].notFound;
+    const tag = index === 0 ? '' : ` lang="${TAG[lang]}"`;
+    const heading = index === 0 ? `<h1 id="titel">${escape(t.title)}</h1>` : `<h2${tag}>${escape(t.title)}</h2>`;
+    return `${heading}
+  <p${tag}><a href="${relative(path, PATHS.home[lang])}">${escape(t.link)}</a></p>`;
+  });
   const main = `<article class="rechtliches nicht-gefunden" aria-labelledby="titel">
-  <h1 id="titel">This page does not exist</h1>
-  <p><a href="${relative(path, PATHS.home.en)}">Go to the start page</a></p>
-  <h2 lang="de">Diese Seite gibt es nicht</h2>
-  <p lang="de"><a href="${relative(path, PATHS.home.de)}">Zur Startseite</a></p>
+  ${lines.join('\n  ')}
 </article>`;
-  return frame(CONTENT.en, 'notFound', path, 'Page not found: IMAP Transfer', 'This page does not exist.', main, context);
+  return frame(CONTENT.en, 'notFound', path, `Page not found: IMAP Transfer`, CONTENT.en.notFound.title, main, context);
 }
 
 export function sitemap(): string {
   const urls = (Object.keys(PATHS) as PageKind[])
     .flatMap((kind) =>
-      LANGS.map(
+      langsOf(kind).map(
         (lang) => `  <url>
     <loc>${SITE.url}${PATHS[kind][lang]}</loc>
-${LANGS.map((alternate) => `    <xhtml:link rel="alternate" hreflang="${alternate}" href="${SITE.url}${PATHS[kind][alternate]}"/>`).join('\n')}
+${langsOf(kind).map((alternate) => `    <xhtml:link rel="alternate" hreflang="${alternate}" href="${SITE.url}${PATHS[kind][alternate]}"/>`).join('\n')}
+    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE.url}${PATHS[kind].en}"/>
   </url>`,
       ),
     )
