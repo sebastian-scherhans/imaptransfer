@@ -3,7 +3,6 @@ import { existsSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it } from 'node:test';
-import { runInNewContext } from 'node:vm';
 import { formatSize, inline, relative } from '../src/html.ts';
 import { CONTENT, LANGS, TAG, type Content, type Lang } from '../src/content.ts';
 import { homePage, legalPage, notFoundPage, sitemap, type ImageSizes, type RenderContext } from '../src/pages.ts';
@@ -39,14 +38,14 @@ const real = releaseOf(
   '2026-10-29T08:30:00Z',
 );
 const withRelease = pages({ release: real, images });
-/** The language of a page by its path: English at the root, every other under its code. */
-const langOf = (path: string): Lang => (LANGS.find((lang) => lang !== 'en' && path.startsWith(`/${lang}/`)) ?? 'en');
+/** The language of a page by its path: every one under its code, English too. */
+const langOf = (path: string): Lang => LANGS.find((lang) => path.startsWith(`/${lang}/`)) ?? assert.fail(`${path} is outside every language`);
 const withoutRelease = pages({ release: null, images });
 
 describe('pages', () => {
   it('say their language, link the other one and every page carries the legal links', () => {
     for (const [path, html] of withRelease) {
-      const lang = path === '/legal-notice/' ? 'en' : langOf(path);
+      const lang = langOf(path);
       assert.match(html, new RegExp(`<html lang="${TAG[lang]}">`), path);
       const imprint = relative(path, PATHS.imprint[lang]);
       const privacy = relative(path, PATHS.privacy[lang]);
@@ -78,16 +77,18 @@ describe('pages', () => {
         const target = posix.join(link.startsWith('/') ? '/' : directory, link.split('#')[0] ?? '');
         const isPage = withRelease.has(target.endsWith('/') ? target : `${target}/`) || withRelease.has(target);
         const isAsset = /^\/assets\/(?:img\/[a-z]{2}\/[a-z-]+\.png|flags\/[a-z]+\.svg)$/.test(target) && existsSync(join(root, target));
-        assert.ok(isPage || files.has(target) || isAsset, `${path} links to ${link}, which does not exist`);
+        // The root has no page; the server sends it on to a language.
+        const isRoot = target === '/';
+        assert.ok(isPage || isRoot || files.has(target) || isAsset, `${path} links to ${link}, which does not exist`);
       }
     }
   });
 
   it('name the icons browsers and phones look for, and the files exist', () => {
-    const home = withRelease.get('/') ?? '';
-    assert.match(home, /<link rel="icon" href="favicon\.ico" sizes="32x32">/);
-    assert.match(home, /<link rel="icon" href="assets\/favicon\.svg" type="image\/svg\+xml">/);
-    assert.match(home, /<link rel="apple-touch-icon" href="apple-touch-icon\.png">/);
+    const home = withRelease.get('/en/') ?? '';
+    assert.match(home, /<link rel="icon" href="\.\.\/favicon\.ico" sizes="32x32">/);
+    assert.match(home, /<link rel="icon" href="\.\.\/assets\/favicon\.svg" type="image\/svg\+xml">/);
+    assert.match(home, /<link rel="apple-touch-icon" href="\.\.\/apple-touch-icon\.png">/);
     for (const file of ['public/favicon.ico', 'public/apple-touch-icon.png', 'assets/favicon.svg']) {
       assert.ok(existsSync(join(root, file)), file);
     }
@@ -114,7 +115,7 @@ describe('pages', () => {
   });
 
   it('show every button before the first version, as places only, and nothing to check', () => {
-    const page = withoutRelease.get('/') ?? '';
+    const page = withoutRelease.get('/en/') ?? '';
     assert.equal(page.match(/class="variante fehlt"/g)?.length, SLOTS.length);
     assert.match(page, /The first version is not out yet/);
     assert.match(withoutRelease.get('/de/') ?? '', /Die erste Version ist noch nicht erschienen/);
@@ -129,7 +130,7 @@ describe('pages', () => {
     assert.match(home, /id="daten"/);
     assert.doesNotMatch(home, /<nav\b/);
     for (const [path, html] of withRelease) {
-      const lang = path === '/legal-notice/' ? 'en' : langOf(path);
+      const lang = langOf(path);
       assert.ok(html.includes(`<a class="knopf knopf-klein" href="${relative(path, `${PATHS.home[lang]}#download`)}">`), `${path}: no way to the downloads`);
     }
   });
@@ -151,27 +152,33 @@ describe('pages', () => {
 
   it('switch to the same page in the other language, or to its start page where there is none', () => {
     assert.ok(withRelease.get('/fr/confidentialite/')?.includes('<a href="../../de/datenschutz/" hreflang="de" lang="de">'));
-    assert.ok(withRelease.get('/de/impressum/')?.includes('<a href="../../legal-notice/" hreflang="en" lang="en">'));
-    assert.ok(withRelease.get('/legal-notice/')?.includes('<a href="../nl/" hreflang="nl" lang="nl">'));
+    assert.ok(withRelease.get('/de/impressum/')?.includes('<a href="../../en/legal-notice/" hreflang="en" lang="en">'));
+    assert.ok(withRelease.get('/en/legal-notice/')?.includes('<a href="../../nl/" hreflang="nl" lang="nl">'));
+    assert.ok(withRelease.get('/fr/')?.includes('<a href="../en/" hreflang="en" lang="en">'));
   });
 
   it('name as alternates only the languages a page is written in', () => {
     const alternates = (html: string) => [...html.matchAll(/<link rel="alternate" hreflang="([a-z-]+)"/g)].map((match) => match[1]);
     assert.deepEqual(alternates(withRelease.get('/es/') ?? ''), [...LANGS, 'x-default']);
     assert.deepEqual(alternates(withRelease.get('/it/privacy/') ?? ''), [...LANGS, 'x-default']);
-    assert.deepEqual(alternates(withRelease.get('/legal-notice/') ?? ''), ['en', 'de', 'x-default']);
+    assert.deepEqual(alternates(withRelease.get('/en/legal-notice/') ?? ''), ['en', 'de', 'x-default']);
+    // Whose language is not known: the start page through the root, which picks theirs; the others in English.
+    assert.ok(withRelease.get('/es/')?.includes('<link rel="alternate" hreflang="x-default" href="https://www.imaptransfer.com/">'));
+    assert.ok(withRelease.get('/es/privacidad/')?.includes('<link rel="alternate" hreflang="x-default" href="https://www.imaptransfer.com/en/privacy/">'));
     const map = sitemap();
     assert.equal(map.match(/<loc>/g)?.length, 2 * LANGS.length + IMPRINT_LANGS.length);
     assert.ok(map.includes('<loc>https://www.imaptransfer.com/pt/privacidade/</loc>'));
-    assert.doesNotMatch(map, /<loc>[^<]*\/fr\/[^<]*impressum|legal-notice\/<\/loc>[\s\S]*<loc>https:\/\/www\.imaptransfer\.com\/legal-notice\//);
+    assert.doesNotMatch(map, /<loc>[^<]*\/fr\/[^<]*impressum|legal-notice\/<\/loc>[\s\S]*<loc>https:\/\/www\.imaptransfer\.com\/en\/legal-notice\//);
+    assert.doesNotMatch(map, /<loc>https:\/\/www\.imaptransfer\.com\/<\/loc>/, 'the root is no page');
+    assert.ok(map.includes('<xhtml:link rel="alternate" hreflang="x-default" href="https://www.imaptransfer.com/"/>'));
   });
 
   it('lead the new languages to the English legal notice and to a privacy policy in their own words, the German one binding', () => {
     for (const lang of LANGS.filter((lang) => !IMPRINT_LANGS.includes(lang as never))) {
       const home = withRelease.get(PATHS.home[lang]) ?? '';
-      assert.ok(home.includes(`<a href="../legal-notice/">${CONTENT[lang].footer.imprint}</a>`), `${lang}: legal notice`);
+      assert.ok(home.includes(`<a href="../en/legal-notice/">${CONTENT[lang].footer.imprint}</a>`), `${lang}: legal notice`);
       assert.ok(home.includes(`<a href="${PATHS.privacy[lang].slice(4)}">${CONTENT[lang].footer.privacy}</a>`), `${lang}: privacy`);
-      assert.ok(home.includes('href="../legal-notice/#liability"'), `${lang}: liability`);
+      assert.ok(home.includes('href="../en/legal-notice/#liability"'), `${lang}: liability`);
       const privacy = withRelease.get(PATHS.privacy[lang]) ?? '';
       assert.match(privacy, /<\/h1>\s*<p>[^<]*<a href="\.\.\/\.\.\/de\/datenschutz\/">/, `${lang}: the binding German version first`);
     }
@@ -199,23 +206,26 @@ describe('pages', () => {
       const page = withRelease.get(notFoundPath(lang)) ?? '';
       assert.match(page, new RegExp(`<html lang="${TAG[lang]}">`), lang);
       assert.ok(page.includes(`<h1 id="titel">${CONTENT[lang].notFound.title}</h1>`), lang);
-      assert.ok(page.includes(`<a href="${PATHS.home[lang]}">${CONTENT[lang].notFound.link}</a>`), lang);
+      // The English one also answers addresses outside every language: its way home is the root, which picks the visitor's.
+      const home = lang === 'en' ? '/' : PATHS.home[lang];
+      assert.ok(page.includes(`<a href="${home}">${CONTENT[lang].notFound.link}</a>`), lang);
+      assert.ok(page.includes(`<a class="marke" href="${home}">`), lang);
       assert.ok(page.includes('<link rel="stylesheet" href="/assets/site.css">'), `${lang}: links from the root`);
       assert.match(page, /<meta name="robots" content="noindex">/, lang);
     }
-    assert.equal(notFoundPath('en'), '/404.html');
+    assert.equal(notFoundPath('en'), '/en/404.html');
     assert.equal(notFoundPath('pt'), '/pt/404.html');
   });
 
   it('point from the downloads to the liability section of the legal notice, before and after the first version', () => {
     for (const result of [withRelease, withoutRelease]) {
       assert.ok(result.get('/de/')?.includes('<a href="impressum/#haftung">Mehr zur Haftung</a>'));
-      assert.ok(result.get('/')?.includes('<a href="legal-notice/#liability">About liability</a>'));
+      assert.ok(result.get('/en/')?.includes('<a href="legal-notice/#liability">About liability</a>'));
     }
     assert.match(withRelease.get('/de/impressum/') ?? '', /<h2 id="haftung">Haftung für die App<\/h2><p>[^<]*§ 521 BGB/);
-    assert.match(withRelease.get('/legal-notice/') ?? '', /<h2 id="liability">Liability for the app<\/h2><p>[^<]*Section 521 BGB/);
+    assert.match(withRelease.get('/en/legal-notice/') ?? '', /<h2 id="liability">Liability for the app<\/h2><p>[^<]*Section 521 BGB/);
     assert.ok(withRelease.get('/de/datenschutz/')?.includes('<a href="../impressum/#haftung">Haftung für die App</a>'));
-    assert.ok(withRelease.get('/privacy/')?.includes('<a href="../legal-notice/#liability">Liability for the app</a>'));
+    assert.ok(withRelease.get('/en/privacy/')?.includes('<a href="../legal-notice/#liability">Liability for the app</a>'));
   });
 
   it('keep the preview out of search engines and mark it', () => {
@@ -225,29 +235,6 @@ describe('pages', () => {
     assert.doesNotMatch(withRelease.get('/de/') ?? '', /noindex/);
   });
 
-  it('send a visitor from elsewhere on from the English start page to the first language of the browser the site speaks', () => {
-    const scripts = (html: string) => [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1] ?? '');
-    const [script = '', ...more] = scripts(withRelease.get('/') ?? '');
-    assert.equal(more.length, 0);
-    /** Where the English start page sends a browser with these languages, arriving from that page; null when it stays. */
-    const target = (languages: string[], referrer = '', hash = '') => {
-      let replaced: string | null = null;
-      const location = { origin: 'https://www.imaptransfer.com', search: '', hash, replace: (to: string) => (replaced = to) };
-      runInNewContext(script, { document: { referrer }, location, navigator: { languages, language: languages[0] ?? '' } });
-      return replaced;
-    };
-    assert.equal(target(['de-DE', 'de', 'en']), 'de/');
-    assert.equal(target(['pt-BR']), 'pt/');
-    assert.equal(target(['ja', 'fr-CA', 'en']), 'fr/', 'the first one the site speaks');
-    assert.equal(target(['en-US', 'de']), null, 'English first');
-    assert.equal(target(['ja', 'zh']), null, 'none of them: English');
-    assert.equal(target([]), null);
-    assert.equal(target(['nl'], 'https://www.google.com/'), 'nl/', 'from a search engine');
-    assert.equal(target(['es'], '', '#download'), 'es/#download', 'the same section');
-    assert.equal(target(['de'], 'https://www.imaptransfer.com/de/'), null, 'picked English in the menu');
-    assert.equal(target(['de'], 'https://www.imaptransfer.com/privacy/'), null, 'from another page of the site');
-    for (const [path, html] of withRelease) if (path !== '/') assert.deepEqual(scripts(html), [], `${path}: chooses no language`);
-  });
 });
 
 describe('html helpers', () => {

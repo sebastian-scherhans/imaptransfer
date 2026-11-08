@@ -2,7 +2,7 @@ import { githubUrl, SITE } from './config.ts';
 import { CONTENT, LANGS, NAMES, TAG, type Content, type Lang } from './content.ts';
 import { escape, fill, formatDate, formatSize, groupedChecksum, inline, relative } from './html.ts';
 import { LEGAL, type LegalKind } from './legal.ts';
-import { langsOf, liabilityPath, notFoundPath, PATHS, type PageKind } from './paths.ts';
+import { defaultPath, langsOf, liabilityPath, notFoundPath, PATHS, type PageKind } from './paths.ts';
 import { SLOTS, type Download, type Platform, type Release, type Slot } from './release.ts';
 
 /** Pixel size of each screenshot, by "lang/name"; the build reads it from the files. */
@@ -39,39 +39,18 @@ function screenshot(context: RenderContext, lang: Lang, from: string, name: stri
   return `<picture><source media="(max-width: 640px)" srcset="${cut.src}" width="${cut.width}" height="${cut.height}">${img}</picture>`;
 }
 
-/**
- * Only on the English start page, where everyone lands who types the address: a visitor coming from
- * elsewhere goes on to the start page in the first of the browser's languages the site speaks,
- * unless English comes before it. Someone who picks English in the language menu comes from a page
- * of this site and stays. Nothing is stored; without script, the page stays English. It runs before
- * anything is drawn, and the English page leaves the history, so Back does not lead to it again.
- */
-function languageChoice(path: string): string {
-  const homes = Object.fromEntries(LANGS.filter((lang) => lang !== 'en').map((lang) => [lang, relative(path, PATHS.home[lang])]));
-  return `<script>(() => {
-    if (document.referrer.startsWith(location.origin + '/')) return;
-    const homes = ${JSON.stringify(homes)};
-    for (const tag of [...(navigator.languages || []), navigator.language]) {
-      const lang = String(tag).toLowerCase().split('-')[0];
-      if (lang === 'en') return;
-      if (homes[lang]) return location.replace(homes[lang] + location.search + location.hash);
-    }
-  })();</script>`;
-}
-
 function head(c: Content, kind: PageKind | 'notFound', path: string, title: string, description: string, context: RenderContext): string {
   const alternates =
     kind === 'notFound'
       ? ''
       : [
           ...langsOf(kind).map((lang) => `<link rel="alternate" hreflang="${lang}" href="${SITE.url}${PATHS[kind][lang]}">`),
-          `<link rel="alternate" hreflang="x-default" href="${SITE.url}${PATHS[kind].en}">`,
+          `<link rel="alternate" hreflang="x-default" href="${SITE.url}${defaultPath(kind)}">`,
         ].join('\n  ');
   const image = `${SITE.url}/assets/img/${c.lang}/app.png`;
   return `<head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  ${kind === 'home' && c.lang === 'en' ? languageChoice(path) : ''}
   <title>${escape(title)}</title>
   <meta name="description" content="${escape(description)}">
   ${context.release?.example || kind === 'notFound' ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${SITE.url}${path}">`}
@@ -98,6 +77,14 @@ function inLanguage(kind: PageKind | 'notFound', lang: Lang): string {
   return kind !== 'notFound' && langsOf(kind).includes(lang) ? PATHS[kind][lang] : PATHS.home[lang];
 }
 
+/**
+ * The way to the start page. The English not-found page also answers addresses outside every
+ * language, so it leads to the root, which picks the visitor's language.
+ */
+function startPage(kind: PageKind | 'notFound', lang: Lang): string {
+  return kind === 'notFound' && lang === 'en' ? '/' : PATHS.home[lang];
+}
+
 function flag(path: string, lang: Lang): string {
   return `<img class="flagge" src="${relative(path, `/assets/flags/${FLAG[lang]}.svg`)}" alt="" width="21" height="14">`;
 }
@@ -121,7 +108,7 @@ function languageMenu(c: Content, kind: PageKind | 'notFound', path: string): st
 
 function header(c: Content, kind: PageKind | 'notFound', path: string): string {
   return `<header class="kopf">
-  <a class="marke" href="${relative(path, PATHS.home[c.lang])}"><img src="${relative(path, '/assets/icon.svg')}" alt="" width="36" height="36"><span>IMAP Transfer</span></a>
+  <a class="marke" href="${relative(path, startPage(kind, c.lang))}"><img src="${relative(path, '/assets/icon.svg')}" alt="" width="36" height="36"><span>IMAP Transfer</span></a>
   <div class="kopf-rechts">
     ${languageMenu(c, kind, path)}
     <a class="knopf knopf-klein" href="${relative(path, `${PATHS.home[c.lang]}#download`)}">${escape(c.nav.download)}</a>
@@ -400,7 +387,7 @@ export function notFoundPage(lang: Lang, context: RenderContext): string {
   const path = notFoundPath(lang);
   const main = `<article class="rechtliches nicht-gefunden" aria-labelledby="titel">
   <h1 id="titel">${escape(c.notFound.title)}</h1>
-  <p><a href="${relative(path, PATHS.home[lang])}">${escape(c.notFound.link)}</a></p>
+  <p><a href="${relative(path, startPage('notFound', lang))}">${escape(c.notFound.link)}</a></p>
 </article>`;
   return frame(c, 'notFound', path, `${c.notFound.title}: IMAP Transfer`, c.notFound.title, main, context);
 }
@@ -412,7 +399,7 @@ export function sitemap(): string {
         (lang) => `  <url>
     <loc>${SITE.url}${PATHS[kind][lang]}</loc>
 ${langsOf(kind).map((alternate) => `    <xhtml:link rel="alternate" hreflang="${alternate}" href="${SITE.url}${PATHS[kind][alternate]}"/>`).join('\n')}
-    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE.url}${PATHS[kind].en}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE.url}${defaultPath(kind)}"/>
   </url>`,
       ),
     )
