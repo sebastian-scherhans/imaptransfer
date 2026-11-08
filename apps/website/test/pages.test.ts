@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it } from 'node:test';
+import { runInNewContext } from 'node:vm';
 import { formatSize, inline, relative } from '../src/html.ts';
 import { CONTENT, LANGS, TAG, type Content, type Lang } from '../src/content.ts';
 import { homePage, legalPage, notFoundPage, sitemap, type ImageSizes, type RenderContext } from '../src/pages.ts';
@@ -222,6 +223,30 @@ describe('pages', () => {
     assert.match(preview, /<meta name="robots" content="noindex">/);
     assert.match(preview, /Vorschau mit Beispieldaten/);
     assert.doesNotMatch(withRelease.get('/de/') ?? '', /noindex/);
+  });
+
+  it('send a visitor from elsewhere on from the English start page to the first language of the browser the site speaks', () => {
+    const scripts = (html: string) => [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1] ?? '');
+    const [script = '', ...more] = scripts(withRelease.get('/') ?? '');
+    assert.equal(more.length, 0);
+    /** Where the English start page sends a browser with these languages, arriving from that page; null when it stays. */
+    const target = (languages: string[], referrer = '', hash = '') => {
+      let replaced: string | null = null;
+      const location = { origin: 'https://www.imaptransfer.com', search: '', hash, replace: (to: string) => (replaced = to) };
+      runInNewContext(script, { document: { referrer }, location, navigator: { languages, language: languages[0] ?? '' } });
+      return replaced;
+    };
+    assert.equal(target(['de-DE', 'de', 'en']), 'de/');
+    assert.equal(target(['pt-BR']), 'pt/');
+    assert.equal(target(['ja', 'fr-CA', 'en']), 'fr/', 'the first one the site speaks');
+    assert.equal(target(['en-US', 'de']), null, 'English first');
+    assert.equal(target(['ja', 'zh']), null, 'none of them: English');
+    assert.equal(target([]), null);
+    assert.equal(target(['nl'], 'https://www.google.com/'), 'nl/', 'from a search engine');
+    assert.equal(target(['es'], '', '#download'), 'es/#download', 'the same section');
+    assert.equal(target(['de'], 'https://www.imaptransfer.com/de/'), null, 'picked English in the menu');
+    assert.equal(target(['de'], 'https://www.imaptransfer.com/privacy/'), null, 'from another page of the site');
+    for (const [path, html] of withRelease) if (path !== '/') assert.deepEqual(scripts(html), [], `${path}: chooses no language`);
   });
 });
 

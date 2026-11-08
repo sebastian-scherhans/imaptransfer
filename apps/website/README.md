@@ -5,7 +5,10 @@ with the downloads and their SHA-256 checksums, a legal notice and a privacy pol
 and the privacy policy come in the seven languages of the app: English at the root (`/`), German,
 French, Spanish, Italian, Dutch and Portuguese under their codes (`/de/`, `/fr/` …). The privacy
 policy in the five later ones is a translation and says that the German one is binding. The legal
-notice is in English and German; the other languages link the English one. Static HTML, no framework, no cookies, no tracking, nothing loaded from other
+notice is in English and German; the other languages link the English one. A visitor who arrives at
+`/` from elsewhere goes on to the first of the browser's languages the site speaks, unless English
+comes first; picking English in the language menu stays English (a small script in the English start
+page's head, nothing stored). Static HTML, no framework, no cookies, no tracking, nothing loaded from other
 servers: fonts and images are served from the site itself.
 
 ## Commands

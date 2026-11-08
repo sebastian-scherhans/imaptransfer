@@ -39,6 +39,26 @@ function screenshot(context: RenderContext, lang: Lang, from: string, name: stri
   return `<picture><source media="(max-width: 640px)" srcset="${cut.src}" width="${cut.width}" height="${cut.height}">${img}</picture>`;
 }
 
+/**
+ * Only on the English start page, where everyone lands who types the address: a visitor coming from
+ * elsewhere goes on to the start page in the first of the browser's languages the site speaks,
+ * unless English comes before it. Someone who picks English in the language menu comes from a page
+ * of this site and stays. Nothing is stored; without script, the page stays English. It runs before
+ * anything is drawn, and the English page leaves the history, so Back does not lead to it again.
+ */
+function languageChoice(path: string): string {
+  const homes = Object.fromEntries(LANGS.filter((lang) => lang !== 'en').map((lang) => [lang, relative(path, PATHS.home[lang])]));
+  return `<script>(() => {
+    if (document.referrer.startsWith(location.origin + '/')) return;
+    const homes = ${JSON.stringify(homes)};
+    for (const tag of [...(navigator.languages || []), navigator.language]) {
+      const lang = String(tag).toLowerCase().split('-')[0];
+      if (lang === 'en') return;
+      if (homes[lang]) return location.replace(homes[lang] + location.search + location.hash);
+    }
+  })();</script>`;
+}
+
 function head(c: Content, kind: PageKind | 'notFound', path: string, title: string, description: string, context: RenderContext): string {
   const alternates =
     kind === 'notFound'
@@ -51,6 +71,7 @@ function head(c: Content, kind: PageKind | 'notFound', path: string, title: stri
   return `<head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  ${kind === 'home' && c.lang === 'en' ? languageChoice(path) : ''}
   <title>${escape(title)}</title>
   <meta name="description" content="${escape(description)}">
   ${context.release?.example || kind === 'notFound' ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${SITE.url}${path}">`}
