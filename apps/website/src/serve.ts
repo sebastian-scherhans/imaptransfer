@@ -4,8 +4,7 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { LANGS } from './content.ts';
-import { notFoundPath, PATHS } from './paths.ts';
+import { languageOf, languageOfPath, MOVED, notFoundPath, PATHS } from './paths.ts';
 
 const root = join(fileURLToPath(new URL('..', import.meta.url)), process.argv[2] ?? 'dist');
 const port = Number(process.env.PORT ?? 4321);
@@ -26,7 +25,18 @@ if (!existsSync(root)) {
 }
 
 createServer((request, response) => {
-  const path = decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname);
+  const url = new URL(request.url ?? '/', 'http://localhost');
+  const path = decodeURIComponent(url.pathname);
+  // As on the server: the root sends on to the browser's language, the old English addresses to their new place.
+  if (path === '/') {
+    response.writeHead(302, { Location: `${PATHS.home[languageOf(request.headers['accept-language'])]}${url.search}`, Vary: 'Accept-Language' }).end();
+    return;
+  }
+  const moved = MOVED[path] ?? MOVED[`${path}/`];
+  if (moved) {
+    response.writeHead(301, { Location: `${moved}${url.search}` }).end();
+    return;
+  }
   let file = normalize(join(root, path));
   if (!file.startsWith(root + sep) && file !== root) {
     response.writeHead(403).end();
@@ -35,8 +45,7 @@ createServer((request, response) => {
   if (existsSync(file) && statSync(file).isDirectory()) file = join(file, 'index.html');
   const found = existsSync(file);
   // As on the server: the not-found page of the language the address is under, else the English one.
-  const lang = LANGS.find((code) => code !== 'en' && path.startsWith(PATHS.home[code])) ?? 'en';
-  const target = found ? file : join(root, notFoundPath(lang));
+  const target = found ? file : join(root, notFoundPath(languageOfPath(path)));
   response.writeHead(found ? 200 : 404, { 'Content-Type': TYPES[extname(target)] ?? 'application/octet-stream' });
   createReadStream(target).pipe(response);
 })

@@ -2,7 +2,7 @@ import { githubUrl, SITE } from './config.ts';
 import { CONTENT, LANGS, NAMES, TAG, type Content, type Lang } from './content.ts';
 import { escape, fill, formatDate, formatSize, groupedChecksum, inline, relative } from './html.ts';
 import { LEGAL, type LegalKind } from './legal.ts';
-import { langsOf, liabilityPath, notFoundPath, PATHS, type PageKind } from './paths.ts';
+import { defaultPath, langsOf, liabilityPath, notFoundPath, PATHS, type PageKind } from './paths.ts';
 import { SLOTS, type Download, type Platform, type Release, type Slot } from './release.ts';
 
 /** Pixel size of each screenshot, by "lang/name"; the build reads it from the files. */
@@ -45,7 +45,7 @@ function head(c: Content, kind: PageKind | 'notFound', path: string, title: stri
       ? ''
       : [
           ...langsOf(kind).map((lang) => `<link rel="alternate" hreflang="${lang}" href="${SITE.url}${PATHS[kind][lang]}">`),
-          `<link rel="alternate" hreflang="x-default" href="${SITE.url}${PATHS[kind].en}">`,
+          `<link rel="alternate" hreflang="x-default" href="${SITE.url}${defaultPath(kind)}">`,
         ].join('\n  ');
   const image = `${SITE.url}/assets/img/${c.lang}/app.png`;
   return `<head>
@@ -77,6 +77,14 @@ function inLanguage(kind: PageKind | 'notFound', lang: Lang): string {
   return kind !== 'notFound' && langsOf(kind).includes(lang) ? PATHS[kind][lang] : PATHS.home[lang];
 }
 
+/**
+ * The way to the start page. The English not-found page also answers addresses outside every
+ * language, so it leads to the root, which picks the visitor's language.
+ */
+function startPage(kind: PageKind | 'notFound', lang: Lang): string {
+  return kind === 'notFound' && lang === 'en' ? '/' : PATHS.home[lang];
+}
+
 function flag(path: string, lang: Lang): string {
   return `<img class="flagge" src="${relative(path, `/assets/flags/${FLAG[lang]}.svg`)}" alt="" width="21" height="14">`;
 }
@@ -100,7 +108,7 @@ function languageMenu(c: Content, kind: PageKind | 'notFound', path: string): st
 
 function header(c: Content, kind: PageKind | 'notFound', path: string): string {
   return `<header class="kopf">
-  <a class="marke" href="${relative(path, PATHS.home[c.lang])}"><img src="${relative(path, '/assets/icon.svg')}" alt="" width="36" height="36"><span>IMAP Transfer</span></a>
+  <a class="marke" href="${relative(path, startPage(kind, c.lang))}"><img src="${relative(path, '/assets/icon.svg')}" alt="" width="36" height="36"><span>IMAP Transfer</span></a>
   <div class="kopf-rechts">
     ${languageMenu(c, kind, path)}
     <a class="knopf knopf-klein" href="${relative(path, `${PATHS.home[c.lang]}#download`)}">${escape(c.nav.download)}</a>
@@ -379,7 +387,7 @@ export function notFoundPage(lang: Lang, context: RenderContext): string {
   const path = notFoundPath(lang);
   const main = `<article class="rechtliches nicht-gefunden" aria-labelledby="titel">
   <h1 id="titel">${escape(c.notFound.title)}</h1>
-  <p><a href="${relative(path, PATHS.home[lang])}">${escape(c.notFound.link)}</a></p>
+  <p><a href="${relative(path, startPage('notFound', lang))}">${escape(c.notFound.link)}</a></p>
 </article>`;
   return frame(c, 'notFound', path, `${c.notFound.title}: IMAP Transfer`, c.notFound.title, main, context);
 }
@@ -391,7 +399,7 @@ export function sitemap(): string {
         (lang) => `  <url>
     <loc>${SITE.url}${PATHS[kind][lang]}</loc>
 ${langsOf(kind).map((alternate) => `    <xhtml:link rel="alternate" hreflang="${alternate}" href="${SITE.url}${PATHS[kind][alternate]}"/>`).join('\n')}
-    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE.url}${PATHS[kind].en}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE.url}${defaultPath(kind)}"/>
   </url>`,
       ),
     )

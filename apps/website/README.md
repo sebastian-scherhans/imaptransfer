@@ -2,10 +2,12 @@
 
 The website of [IMAP Transfer](https://github.com/sebastian-scherhans/imaptransfer): one landing page
 with the downloads and their SHA-256 checksums, a legal notice and a privacy policy. The landing page
-and the privacy policy come in the seven languages of the app: English at the root (`/`), German,
-French, Spanish, Italian, Dutch and Portuguese under their codes (`/de/`, `/fr/` …). The privacy
-policy in the five later ones is a translation and says that the German one is binding. The legal
-notice is in English and German; the other languages link the English one. Static HTML, no framework, no cookies, no tracking, nothing loaded from other
+and the privacy policy come in the seven languages of the app, each under its code: English (`/en/`),
+German, French, Spanish, Italian, Dutch and Portuguese (`/de/`, `/fr/` …). The privacy policy in the
+five later ones is a translation and says that the German one is binding. The legal notice is in
+English and German; the other languages link the English one. The root (`/`) has no page: the
+server sends each visitor on to the first language their browser asks for, English if the site does
+not speak it. A language picked in the menu is in the address, so it holds. Static HTML, no framework, no cookies, no tracking, nothing loaded from other
 servers: fonts and images are served from the site itself.
 
 ## Commands
@@ -73,6 +75,7 @@ this server instead of GitHub.
 | The eight installers and their order | `SLOTS` in `src/release.ts` |
 | Texts of the landing page, every language; the names of the languages | `src/content.ts` |
 | Where each page lives, and which languages have a legal notice | `PATHS` and `IMPRINT_LANGS` in `src/paths.ts` |
+| Old addresses that send on to new ones (released app versions link them; keep them) | `MOVED` in `src/paths.ts` |
 | Legal notice and privacy policy | `src/legal.ts` (update the date when they change) |
 | Icons | `assets/favicon.svg` for the tab, `icons/touch-icon.svg` as the source of the home screen icon; `public/favicon.ico` and `public/apple-touch-icon.png` are made from them by `pnpm --filter imaptransfer-desktop website-icons` and copied to the root |
 | Flags beside the names of the languages | `assets/flags/` |
@@ -93,8 +96,11 @@ It fetches the files of the release, builds `dist/` and copies it with rsync ove
 downloads first, then the pages, and only at the end it removes what the new version no longer
 has. So no page ever links to a file that is missing. `.well-known/` on the server stays untouched.
 The build also writes a `.htaccess` (`src/htaccess.ts`): imaptransfer.com sends every path on to
-the same path at www.imaptransfer.com for good (301), an unknown address under a language gets
-that language's not-found page (`/fr/404.html` …) and any other the English `/404.html`, and
+the same path at www.imaptransfer.com for good (301); the old English addresses (`/privacy/`,
+`/legal-notice/`) go to their place under `/en/` for good; the root goes on to the language of the
+browser (302, by the first language in its `Accept-Language`; `pnpm serve` does the same); an
+unknown address under a language gets that language's not-found page (`/fr/404.html` …) and any
+other the English `/en/404.html`, and
 `latest*.yml` and `SHA256SUMS` are not cached. The site's address is the one in `src/config.ts`;
 canonical links, the sitemap and robots.txt name only that one.
 

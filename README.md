@@ -146,4 +146,4 @@ IMAP Transfer sichert Mailkonten, spielt Sicherungen zurück und zieht Konten vo
 
 ## License
 
-[MIT](LICENSE). IMAP Transfer is provided as is, without warranty; see the license and the [note on liability](https://www.imaptransfer.com/legal-notice/#liability). Back up your mail before you restore, migrate, sync or clean up.
+[MIT](LICENSE). IMAP Transfer is provided as is, without warranty; see the license and the [note on liability](https://www.imaptransfer.com/en/legal-notice/#liability). Back up your mail before you restore, migrate, sync or clean up.
