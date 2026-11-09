@@ -79,7 +79,7 @@ this server instead of GitHub.
 | Legal notice and privacy policy | `src/legal.ts` (update the date when they change) |
 | Icons | `assets/favicon.svg` for the tab, `icons/touch-icon.svg` as the source of the home screen icon; `public/favicon.ico` and `public/apple-touch-icon.png` are made from them by `pnpm --filter imaptransfer-desktop website-icons` and copied to the root |
 | Flags beside the names of the languages | `assets/flags/` |
-| Screenshots | `assets/img/<lang>/`: `app.png`, its phone crop `app-narrow.png` and `migrate.png`, taken at twice the size they are shown. Made with example data by `pnpm --filter imaptransfer-desktop screenshots website <lang>` with `<lang>` one of en, de, fr, es, it, nl, pt |
+| Screenshots | `assets/img/<lang>/`: `app.png` with its phone crop `app-narrow.png`, and `migrate.png` with `migrate-narrow.png`, the plan from a narrow window for phones; all taken at twice the size they are shown. The example accounts use an address and a first name common in that language, and the texts in `src/content.ts` name the same ones. Made with example data by `pnpm --filter imaptransfer-desktop screenshots website <lang>` with `<lang>` one of en, de, fr, es, it, nl, pt |
 | Layout and colours | `assets/site.css`, the design decisions in `gestaltung.md` |
 | Platform detection, copying, the checker | `assets/site.js` |
 

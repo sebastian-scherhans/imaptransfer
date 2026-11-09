@@ -12,7 +12,7 @@ import { exampleRelease, releaseOf, SLOTS } from '../src/release.ts';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FONTS = ['newsreader-500.woff2', 'newsreader-600.woff2', 'newsreader-OFL.txt', 'hanken-grotesk-400.woff2', 'hanken-grotesk-600.woff2', 'hanken-grotesk-OFL.txt'];
 const images: ImageSizes = new Map(
-  LANGS.flatMap((lang) => ['app', 'app-narrow', 'migrate'].map((name) => [`${lang}/${name}`, { width: 2000, height: 1000 }] as const)),
+  LANGS.flatMap((lang) => ['app', 'app-narrow', 'migrate', 'migrate-narrow'].map((name) => [`${lang}/${name}`, { width: 2000, height: 1000 }] as const)),
 );
 
 function pages(context: RenderContext): Map<string, string> {
@@ -196,8 +196,11 @@ describe('pages', () => {
         if (at.startsWith('.lang') || at.startsWith('.locale') || at === '.cli.code' || at === '.backup.tree') continue;
         assert.deepEqual(marks(own.get(at) ?? '').sort(), marks(text).sort(), `${lang}${at}`);
       }
-      const commands = (code: string) => code.split('\n').filter((line) => line && !line.startsWith('#'));
-      assert.deepEqual(commands(CONTENT[lang].cli.code), commands(CONTENT.en.cli.code), `${lang}: commands`);
+      // The commands are the English ones; only the example person is the one of the language's backup.
+      const person = (content: Content) => content.backup.tree.split('\n')[0]?.replace(/@.*/, '') ?? '';
+      const commands = (content: Content) =>
+        content.cli.code.split('\n').filter((line) => line && !line.startsWith('#')).map((line) => line.replaceAll(person(content), person(CONTENT.en)));
+      assert.deepEqual(commands(CONTENT[lang] as Content), commands(CONTENT.en), `${lang}: commands`);
     }
   });
 

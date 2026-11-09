@@ -24,7 +24,7 @@ function icon(path: string): string {
 
 /**
  * A screenshot of the app in its language. The files are taken at twice the size they are shown,
- * so they stay sharp on every screen; a phone gets its own cut of the window, large enough to read.
+ * so they stay sharp on every screen; a phone gets its own picture, large enough to read.
  */
 function screenshot(context: RenderContext, lang: Lang, from: string, name: string, alt: string, narrow?: string): string {
   const file = (image: string) => {
@@ -195,7 +195,7 @@ function backup(c: Content): string {
 function migrate(c: Content, path: string, context: RenderContext): string {
   return `<section class="abschnitt umzug" id="migrate" aria-labelledby="umzug-titel">
   <figure class="ausschnitt umzug-bild">
-    ${screenshot(context, c.lang, path, 'migrate', c.migrate.image)}
+    ${screenshot(context, c.lang, path, 'migrate', c.migrate.image, 'migrate-narrow')}
   </figure>
   <div class="umzug-text">
     <h2 id="umzug-titel">${escape(c.migrate.title)}</h2>
